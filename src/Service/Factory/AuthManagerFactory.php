@@ -19,17 +19,13 @@ class AuthManagerFactory implements FactoryInterface
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
 
-        $authenticationService = $container->get(AuthenticationService::class);	//сервис авторации
-        $sessionManager = $container->get(SessionManager::class);				//менеджер сессии
+        $authenticationService = $container->get(AuthenticationService::class);   //сервис авторации
+        $sessionManager = $container->get(SessionManager::class);                 //менеджер сессии
          $rbacManager = $container->get(RbacManager::class);
-		//конфигурация
+        //конфигурация
         $config = $container->get('Config');
-        if (isset($config['access_filter']))
-            $config = $config['access_filter'];
-        else
-            $config = [];
-                        
-
+        if (isset($config['access_filter'])) { $config = $config['access_filter'];}
+          else { $config = [];}
         return new AuthManager($authenticationService, $sessionManager, $config,$rbacManager);
     }
 }

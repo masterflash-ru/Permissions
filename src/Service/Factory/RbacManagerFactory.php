@@ -13,11 +13,11 @@ class RbacManagerFactory
 
 public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
-		 $connection=$container->get('ADO\Connection');
-		 
+        $connection=$container->get('ADO\Connection');
+
         $authService = $container->get(AuthenticationService::class);
         $cache = $container->get('DefaultSystemCache');
-		
+
         $assertionManagers = [];
         $config = $container->get('Config');
         if (isset($config['rbac_manager']['assertions'])) {
@@ -25,7 +25,6 @@ public function __invoke(ContainerInterface $container, $requestedName, array $o
                 $assertionManagers[$serviceName] = $container->get($serviceName);
             }
         }
-        
         return new RbacManager($connection, $authService, $cache, $assertionManagers);
     }
 }
