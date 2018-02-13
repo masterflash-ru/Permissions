@@ -77,6 +77,7 @@ DROP TABLE IF EXISTS `role2permission`;
 CREATE TABLE `role2permission` (
   `role` int(11) NOT NULL,
   `permission` int(11) NOT NULL,
+  `code` int(11) DEFAULT NULL COMMENT 'битовая структура доступа',
   PRIMARY KEY (`role`,`permission`),
   KEY `permission` (`permission`),
   KEY `role` (`role`),
@@ -91,7 +92,7 @@ CREATE TABLE `role2permission` (
 
 LOCK TABLES `role2permission` WRITE;
 /*!40000 ALTER TABLE `role2permission` DISABLE KEYS */;
-INSERT INTO `role2permission` VALUES (1,1);
+INSERT INTO `role2permission` VALUES (1,1,NULL);
 /*!40000 ALTER TABLE `role2permission` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -104,13 +105,13 @@ DROP TABLE IF EXISTS `role_tree`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `role_tree` (
   `role` int(11) NOT NULL,
-  `parent` int(11) NOT NULL,
-  PRIMARY KEY (`role`,`parent`),
+  `parent_role` int(11) NOT NULL,
+  PRIMARY KEY (`role`,`parent_role`),
   KEY `role` (`role`),
-  KEY `parent` (`parent`),
-  CONSTRAINT `role_tree_fk` FOREIGN KEY (`role`) REFERENCES `role` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `role_tree_fk1` FOREIGN KEY (`parent`) REFERENCES `role` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='зависимости ролей';
+  KEY `parent_role` (`parent_role`),
+  CONSTRAINT `role_tree_fk` FOREIGN KEY (`role`) REFERENCES `role` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `role_tree_fk1` FOREIGN KEY (`parent_role`) REFERENCES `role` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -119,7 +120,6 @@ CREATE TABLE `role_tree` (
 
 LOCK TABLES `role_tree` WRITE;
 /*!40000 ALTER TABLE `role_tree` DISABLE KEYS */;
-INSERT INTO `role_tree` VALUES (2,1);
 /*!40000 ALTER TABLE `role_tree` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -134,24 +134,21 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `login` char(127) NOT NULL COMMENT 'логин, можно мыло',
   `status` int(11) NOT NULL COMMENT 'состояние юзера 1-нормальный',
-  `phone` char(127) DEFAULT NULL,
   `password` char(127) NOT NULL COMMENT 'текущий пароль',
   `name` char(127) DEFAULT NULL COMMENT 'псевдоним',
   `full_name` char(255) DEFAULT NULL COMMENT 'ФИО',
-  `my_info` text COMMENT 'обо мне',
   `temp_password` char(127) DEFAULT NULL COMMENT 'временный пароль для восстановления',
   `temp_date` datetime DEFAULT NULL COMMENT 'дата годности временного пароля для активации',
   `confirm_hash` char(50) DEFAULT NULL COMMENT 'строка для подтверждения регистрации',
   `date_registration` datetime DEFAULT NULL COMMENT 'дата регистрации',
   `date_last_login` datetime DEFAULT NULL COMMENT 'дата входа',
-  `sex` int(11) DEFAULT NULL COMMENT '1-муж',
   PRIMARY KEY (`id`),
   KEY `temp_date` (`temp_date`),
   KEY `confirm_hash` (`confirm_hash`),
   KEY `status` (`status`),
   KEY `date_registration` (`date_registration`),
   KEY `login` (`login`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT='регистрированные юзеры';
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT='регистрированные юзеры (база)';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -160,8 +157,36 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'root',1,NULL,'$2y$10$TryLBUTSX7lZdSD8NBUFMOu8.vzvfoqaFlHgsv2C460EgxGkkYff6',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO `users` VALUES (1,'root',1,'$2y$10$TryLBUTSX7lZdSD8NBUFMOu8.vzvfoqaFlHgsv2C460EgxGkkYff6',NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `users2permission`
+--
+
+DROP TABLE IF EXISTS `users2permission`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `users2permission` (
+  `users` int(11) NOT NULL,
+  `permission` int(11) NOT NULL,
+  `code` int(11) DEFAULT NULL COMMENT 'Битовая структура доступа',
+  PRIMARY KEY (`users`,`permission`),
+  KEY `users` (`users`),
+  KEY `permission` (`permission`),
+  CONSTRAINT `users2permission_fk` FOREIGN KEY (`users`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `users2permission_fk1` FOREIGN KEY (`permission`) REFERENCES `permission` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `users2permission`
+--
+
+LOCK TABLES `users2permission` WRITE;
+/*!40000 ALTER TABLE `users2permission` DISABLE KEYS */;
+/*!40000 ALTER TABLE `users2permission` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -201,4 +226,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-01-26 11:15:49
+-- Dump completed on 2018-02-13  8:35:26

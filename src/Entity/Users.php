@@ -10,7 +10,7 @@ class Users
 по формату:
 имя в таблице => имя в этом объекте
 * /
-	
+
 private static $__map__=[
 	"fields"=>[
 			/*Имя поля таблицы => имя в этой сущности + параметры* /
@@ -43,10 +43,6 @@ protected $id = null;
 
     protected $full_name = null;
 
-    protected $avatar = null;
-
-    protected $my_info = null;
-
     protected $temp_password = null;
 
     protected $temp_date = null;
@@ -56,10 +52,6 @@ protected $id = null;
     protected $date_registration = null;
 
     protected $date_last_login = null;
-
-    protected $sex = null;
-
-    protected $role = null;
 
     public function setId($id)
     {
@@ -131,26 +123,6 @@ protected $id = null;
         return $this->full_name;
     }
 
-    public function setAvatar($avatar)
-    {
-        $this->avatar=$avatar;
-    }
-
-    public function getAvatar()
-    {
-        return $this->avatar;
-    }
-
-    public function setMy_info($my_info)
-    {
-        $this->my_info=$my_info;
-    }
-
-    public function getMy_info()
-    {
-        return $this->my_info;
-    }
-
     public function setTemp_password($temp_password)
     {
         $this->temp_password=$temp_password;
@@ -200,26 +172,5 @@ protected $id = null;
     {
         return $this->date_last_login;
     }
-
-    public function setSex($sex)
-    {
-        $this->sex=$sex;
-    }
-
-    public function getSex()
-    {
-        return $this->sex;
-    }
-
-    public function setRole($role)
-    {
-        $this->role=$role;
-    }
-
-    public function getRole()
-    {
-        return $this->role;
-    }
-
 
 }
