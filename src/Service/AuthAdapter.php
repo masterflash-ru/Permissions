@@ -72,12 +72,8 @@ class AuthAdapter implements AdapterInterface
       $rs=new RecordSet();
       $rs->CursorType =adOpenKeyset;
       $rs->Open($c);
-
-      $resultSet = new HydratingResultSet(new ReflectionHydrator, new Users);
-      $resultSet->initialize($rs);
-      //объект Admins
-      $admin=$resultSet->current();
-      //\Zend\Debug\Debug::dump($admin->getRoles());
+        
+       $admin= $rs->FetchEntity(Users::class);
 
         // If there is no such user, return 'Identity Not Found' status.
         if ($admin == null) {
