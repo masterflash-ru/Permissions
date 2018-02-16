@@ -2,13 +2,13 @@
 namespace Mf\Permissions\Entity;
 
 
-class Users
+class Users 
 {
 
 	const STATUS_ACTIVE       = 1; //нормальное состояние
     const STATUS_NONACTIVE    = 0; //не активный.
-    
     protected $value=[];
+
     
     /**
     *все методы перегружены, в разных проектах колонки таблицы расширения разные
@@ -25,8 +25,10 @@ class Users
             if (isset($this->value[$key])) {return $this->value[$key];}
             return null;
         }
-
     }
 	
-
+    public function toArray()
+    {
+        return $this->value;
+    }
 }

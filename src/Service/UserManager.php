@@ -1,11 +1,14 @@
 <?php
 namespace Mf\Permissions\Service;
 
-use Mf\Permissions\Entity\User;
+use Mf\Permissions\Entity\Users;
 
 use Zend\Crypt\Password\Bcrypt;
 use Zend\Math\Rand;
 use Exception;
+use ADO\Service\RecordSet;
+use ADO\Service\Command;
+
 
 /**
  * сервис для управления юзерами
@@ -20,14 +23,8 @@ class UserManager
     
     /*
     *массив имен колонок в базовой таблице юзеров
-    *при изменении основной таблицы обязательно здесь должно быть отражено!
-    *первичный ключ id считается железно
     */
-    protected $db_field_base=[
-        "login","status","password","name","full_name",
-        "temp_password","temp_date","confirm_hash",
-        "date_registration","date_last_login",
-    ];
+    protected $db_field_base=[];
 
     /*
     *массив имен колонок в расширеной  таблице юзеров
@@ -43,17 +40,27 @@ class UserManager
     {
         $this->connection = $connection;
         $rs=new RecordSet();
-        $rs->Open("select * from users_ext limit 1",$this->connection);
-        foreach ($rs->DataColumns->Item_text as $column_name=>$columninfo) {
-            $this->db_field_ext[]=$column_name;
+        $rs->Open("show columns from users",$this->connection);
+        while (!$rs->EOF){
+            $this->db_field_base[]=$rs->Fields->Item["Field"]->Value;
+            $rs->MoveNext();
         }
+        $rs->Close();
+        $rs=new RecordSet();
+        $rs->Open("show columns from users_ext",$this->connection);
+        while (!$rs->EOF){
+            $this->db_field_ext[]=$rs->Fields->Item["Field"]->Value;
+            $rs->MoveNext();
+        }
+        $rs->Close();
+
     }
     
     /**
      * добавить нового юзера
      *на входе массив ключи которого это имена колонок
      *в какую таблицу писать работает автоматически
-     *возвращается экземпляр Mf\Permissions\Entity\User с заполнеными данными
+     *возвращается экземпляр Mf\Permissions\Entity\Users с заполнеными данными
      */
     public function addUser($data) 
     {
@@ -67,69 +74,37 @@ class UserManager
         if($this->isUserExists($data['login'])) {
             throw new Exception("Пользователь с логином " . $data['login'] . " уже зарегистрирован");
         }
-        
-        $rs=new RecordSet();
-        $rs->Open("select * from users limit 1",$this->connection);
-        $rs->AddNew();
-        $this->connection->BeginTrans();
-        // шифруем пароль
-        $bcrypt = new Bcrypt();
-        $passwordHash = $bcrypt->create($data['password']);
-        
-        //пробежим по базовой таблице
-        foreach ($this->db_field_base as $field){
-            if (in_array($field,$data)){
-                $rs->Fields->Item[$field]->Value=$data[$field];
-            }
-        }
-        //запишем в базовую таблицу информацию и получим ID нового юзера
-        $rs->Update();
-        $this->connection->CommitTrans();
-        $data["id"]=(int)$rs->Fields->Item["id"]->Value;
-        
-        $this->connection->BeginTrans();
-        $rs_ext=new RecordSet();
-        $rs_ext->Open("select * from users_ext limit 1",$this->connection);
-        $rs_ext->AddNew();
-        
-        //пробежим по расширеной таблице
-        foreach ($this->db_field_ext as $field){
-            if (in_array($field,$data)){
-                $rs_ext->Fields->Item[$field]->Value=$data[$field];
-            }
-        }
-        $rs_ext->Update();
-        $this->connection->CommitTrans();
-        $rs_ext->Close();
-        $rs->Close();
-        
+        return $this->_updateUserInfo(0, $data,true);
+    }
+    
+    /*
+    *получить инфу по юзеру c id
+    *возвращает users  
+    */
+    public function GetUserIdInfo($id)
+    {
         //читаем и заполняем сущность "юзер"
         $this->connection->BeginTrans();
-        $rs->$this->connection->Execute("select * from users u,users_ext e where u.id=e.id where u.id=".(int)$data["id"]);
+        $rs=$this->connection->Execute("select * from users u,users_ext e where u.id=e.id and u.id=".(int)$id);
         $this->connection->CommitTrans();
+
+        if ($rs->EOF){
+            throw new \Exception("Юзера с id={$id} не существует");
+        }
         $user=$rs->FetchEntity(Users::class);
         $rs->Close();
         return $user;
     }
-    
-    /**
-     * This method updates data of an existing user.
-     */
-    public function updateUser($user, $data) 
-    {
-        // Do not allow to change user email if another user with such email already exits.
-        if($user->getEmail()!=$data['email'] && $this->isUserExists($data['login'])) {
-            throw new \Exception("Another user with email address " . $data['email'] . " already exists");
-        }
-        
-        $user->setEmail($data['email']);
-        $user->setFullName($data['full_name']);        
-        $user->setStatus($data['status']);        
-        
-        // Apply changes to database.
-        $this->entityManager->flush();
 
-        return true;
+    /**
+     * Обновление инфы в профиле юзера, автоматом пишется в основную или дополнительную таблицы.
+     * $userid = ID юзера длья которог оменяем инфу
+     * если ошибка - исключение
+     * возвращает экземпляр users
+     */
+    public function updateUserInfo ($userid, $data) 
+    {
+        return $this->_updateUserInfo($userid, $data);
     }
     
     
@@ -152,26 +127,12 @@ class UserManager
         return !$rs->EOF;
     }
     
-    /**
-     * Checks that the given password is correct.
-     */
-    public function validatePassword($user, $password) 
-    {
-        $bcrypt = new Bcrypt();
-        $passwordHash = $user->getPassword();
-        
-        if ($bcrypt->verify($password, $passwordHash)) {
-            return true;
-        }
-        
-        return false;
-    }
     
     /**
      * Generates a password reset token for the user. This token is then stored in database and 
      * sent to the user's E-mail address. When the user clicks the link in E-mail message, he is 
      * directed to the Set Password page.
-     */
+     * /
     public function generatePasswordResetToken($user)
     {
         // Generate a token.
@@ -186,7 +147,7 @@ class UserManager
         $subject = 'Password Reset';
             
         $httpHost = isset($_SERVER['HTTP_HOST'])?$_SERVER['HTTP_HOST']:'localhost';
-        $passwordResetUrl = 'http://' . $httpHost . '/set-password?token=' . $token;
+        $passwordResetUrl = $_SERVER['REQUEST_SCHEME'] . $httpHost . '/set-password?token=' . $token;
         
         $body = 'Please follow the link below to reset your password:\n';
         $body .= "$passwordResetUrl\n";
@@ -198,7 +159,7 @@ class UserManager
     
     /**
      * Checks whether the given password reset token is a valid one.
-     */
+     * /
     public function validatePasswordResetToken($passwordResetToken)
     {
         $user = $this->entityManager->getRepository(User::class)
@@ -222,7 +183,7 @@ class UserManager
     
     /**
      * This method sets new password by password reset token.
-     */
+     * /
     public function setNewPasswordByToken($passwordResetToken, $newPassword)
     {
         if (!$this->validatePasswordResetToken($passwordResetToken)) {
@@ -251,34 +212,72 @@ class UserManager
     }
     
     /**
-     * This method is used to change the password for the given user. To change the password,
-     * one must know the old password.
+     * Обновление инфы/создание в профиле юзера, автоматом пишется в основную или дополнительную таблицы.
+     * $userid = ID юзера длья которог оменяем инфу
+     * $flag_create_new - если true, если нет юзера, создается новая запись
+     * если ошибка - исключение
+     * возвращает экземпляр users
      */
-    public function changePassword($user, $data)
+    protected function _updateUserInfo ($userid=0, array $data=[],$flag_create_new=false) 
     {
-        $oldPassword = $data['old_password'];
+
+        $userid=(int)$userid;
+        $rs=new RecordSet();
+        $rs->CursorType =adOpenKeyset;
+        $rs->Open("select * from users where id=$userid",$this->connection);
+        if($rs->EOF && !$flag_create_new) {
+            throw new \Exception("Юзера с id={$userid} не найдено");
+        }
+        if($rs->EOF && $flag_create_new) {
+            $rs->AddNew();
+        }
+
+        $this->connection->BeginTrans();
         
-        // Check that old password is correct
-        if (!$this->validatePassword($user, $oldPassword)) {
-            return false;
-        }                
-        
-        $newPassword = $data['new_password'];
-        
-        // Check password length
-        if (strlen($newPassword)<6 || strlen($newPassword)>64) {
-            return false;
+        if (isset($data['password'])){
+            // шифруем пароль
+            $bcrypt = new Bcrypt();
+            $data['password'] = $bcrypt->create($data['password']);
+            if (!empty($data['id'])){
+                /*удалим сохраненные данные если есть смена пароля и у нас обновление существующего юзера*/
+                 $this->connection->Execute("delete from users_save_me where users=".(int)$data['id']);
+            }
         }
         
-        // Set new password for user        
-        $bcrypt = new Bcrypt();
-        $passwordHash = $bcrypt->create($newPassword);
-        $user->setPassword($passwordHash);
+        //пробежим по базовой таблице
+        foreach ($this->db_field_base as $field){
+            if (array_key_exists($field,$data)){
+                $rs->Fields->Item[$field]->Value=$data[$field];
+            }
+        }
+        //запишем в базовую таблицу информацию и получим ID нового юзера
+        $rs->Update();
+        $this->connection->CommitTrans();
         
-        // Apply changes
-        $this->entityManager->flush();
+        
+        $this->connection->BeginTrans();
+        $rs_ext=new RecordSet();
+        $rs_ext->CursorType =adOpenKeyset;
+        $rs_ext->Open("select * from users_ext where id=$userid",$this->connection);
+        if($rs_ext->EOF && $flag_create_new) {
+            $rs_ext->AddNew();
+            $userid=(int)$rs->Fields->Item["id"]->Value;
+            $data["id"]=$userid;
 
-        return true;
+        }
+
+        //пробежим по расширеной таблице
+        foreach ($this->db_field_ext as $field){
+            if (array_key_exists($field,$data)){
+                $rs_ext->Fields->Item[$field]->Value=$data[$field];
+            }
+        }
+        $rs_ext->Update();
+        $this->connection->CommitTrans();
+        $rs_ext->Close();
+        $rs->Close();
+        return $this->GetUserIdInfo($userid);
     }
+
 }
 
