@@ -18,9 +18,9 @@ use Exception;
  */
 class AuthManager
 {
-    const ACCESS_GRANTED = 1; //доступн разрешен
-    const AUTH_REQUIRED  = 2; //перейти на страницу авторизации
-    const ACCESS_DENIED  = 3; //доступ запрещен
+    //const ACCESS_GRANTED = 1; //доступн разрешен
+    //const AUTH_REQUIRED  = 2; //перейти на страницу авторизации
+    //const ACCESS_DENIED  = 3; //доступ запрещен
 
     /**
      * Authentication service.
@@ -43,12 +43,10 @@ class AuthManager
     /**
      * Constructs the service.
      */
-    public function __construct($authService, $sessionManager, $config,$rbacManager) 
+    public function __construct($authService, $sessionManager) 
     {
         $this->authService = $authService;
         $this->sessionManager = $sessionManager;
-        $this->config = $config;
-        $this->rbacManager = $rbacManager;
     }
     
     /**
@@ -84,72 +82,5 @@ class AuthManager
     }
 
 
-
-    /**
-     * This is a simple access control filter. It is able to restrict unauthorized
-     * users to visit certain pages.
-     * 
-     * This method uses the 'access_filter' key in the config file and determines
-     * whenther the current visitor is allowed to access the given controller action
-     * or not. It returns true if allowed; otherwise false.
-     */
-public function filterAccess($controllerName, $actionName)
-    {
-        /* Determine mode - 'restrictive' (default) or 'permissive'.
-        * всем, если мы поставим звездочку (*);
-        * любому аутентифицированному пользователю, если мы поставим коммерческое at (@);
-        * конкретному аутентифицированному пользователю с заданным адресом эл. почты личности, если мы поставим (@identity)
-        * любому аутентифицированному пользователю с заданной привилегией, если мы поставим знак плюса и имя привилегии (+permission).
-*/
-
-
-      $mode = isset($this->config['options']['mode'])?$this->config['options']['mode']:'restrictive';
-
-      if ($mode!='restrictive' && $mode!='permissive') {throw new Exception('Invalid access filter mode (expected either restrictive or permissive mode');}
-
-      if (isset($this->config['controllers'][$controllerName])) {
-            $items = $this->config['controllers'][$controllerName];
-            foreach ($items as $item) {
-                $actionList = $item['actions'];
-                $allow = $item['allow'];
-                if (is_array($actionList) && in_array($actionName, $actionList) || $actionList=='*') {
-                    if ($allow=='*'){
-                          //разрешено все
-                          return self::ACCESS_GRANTED; 
-                    }
-                      else if (!$this->authService->hasIdentity()) {
-                        //юзер не авторизован вообще, предложить авторизоваться
-                        return self::AUTH_REQUIRED;
-                      }
-
-                    if ($allow=='@') {
-                        // разрешено любому авторизованном
-                        return self::ACCESS_GRANTED;
-                    } else if (substr($allow, 0, 1)=='@') {
-                        // разрешено только юзеру с указанным ID
-                        $identity = substr($allow, 1);
-                        if ($this->authService->getIdentity()==$identity){return self::ACCESS_GRANTED; }
-                          else { return self::ACCESS_DENIED; }
-                    } else if (substr($allow, 0, 1)=='+') {
-                          //любой авторизованный юзер у которого есть эта привелегия
-                          $permission = substr($allow, 1);
-                          if ($this->rbacManager->isGranted(null, $permission)) {return self::ACCESS_GRANTED; }
-                            else  {return self::ACCESS_DENIED;}
-                    } else { throw new \Exception('Unexpected value for "allow" - expected either "?", "@", "@identity" or "+permission"'); }
-                }
-            }
-        }
-
-        // In restrictive mode, we require authentication for any action not 
-        // listed under 'access_filter' key and deny access to authorized users 
-        // (for security reasons).
-        if ($mode=='restrictive') {
-            if(!$this->authService->hasIdentity()) { return self::AUTH_REQUIRED;}
-                else { return self::ACCESS_DENIED;}
-        }
-
-        // Permit access to this page.
-        return self::ACCESS_GRANTED;
-    }
 
 }
