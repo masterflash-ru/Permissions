@@ -64,9 +64,6 @@ class AuthManager
         $authAdapter->setPassword($password);
         $result = $this->authService->authenticate();
 
-        // If user wants to "remember him", we will make session to expire in 
-        // one month. By default session expires in 1 hour (as specified in our 
-        // config/global.php file).
         if ($result->getCode()==Result::SUCCESS && $rememberMe) {
             $this->sessionManager->rememberMe(60*60*24*30);
         }

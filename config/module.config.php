@@ -19,5 +19,5 @@ return [
             Service\UserManager::class => Service\Factory\UserManagerFactory::class,
         ],
     ],
-
+    
 ];
