@@ -1,6 +1,6 @@
 <?php
 /*
-*менеджер авторизации, объект который сохраняет результат успешной авторизации в хранилище, сессии
+*менеджер авторизации, объект который обращается в адаптер авторизации и сохраняет результат успешной авторизации в хранилище, сессии
 данный объект вызывает Mf\Permissions\Service\AuthAdapter, передает туда логин/пароль и получает ответ, этот ответ возвращается в программу которая
 *вызвала, возвращается Zend\Authentication\Result
 */
@@ -53,7 +53,7 @@ class AuthManager
     
     /**
      * авторизация и сохранение в сессии
-     * 
+     * по умолчанию сохраняет сессию на 30 дней, если выбрано "запомнить меня"
      */
     public function login($login, $password, $rememberMe=false)
     {   
@@ -76,12 +76,10 @@ class AuthManager
      */
     public function logout()
     {
-        // Allow to log out only when user is logged in.
         if ($this->authService->getIdentity()==null) {
-            throw new Exception('The user is not logged in');
+            throw new Exception('Пользователь не авторизован');
         }
 
-        // Remove identity from session.
       $this->authService->clearIdentity();
     }
 
