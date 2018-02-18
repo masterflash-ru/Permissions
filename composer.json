@@ -12,6 +12,7 @@
     "require": {
         "php": "^7.0",
         "zendframework/zend-permissions-rbac": "^2.5",
+        "zendframework/zend-mvc-plugin-identity": "^1.0",
         "masterflash-ru/ado": "*"
     },
     "autoload": {
