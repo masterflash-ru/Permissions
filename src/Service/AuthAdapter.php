@@ -15,11 +15,6 @@ use ADO\Service\RecordSet;
 use ADO\Service\Command;
 
 
-//для заполнения сущностей в стилистике ZF
-use Zend\Hydrator\Reflection as ReflectionHydrator;
-use  ADO\ResultSet\HydratingResultSet;
-
-
 
 /**
 адаптер аутентификации
@@ -73,31 +68,31 @@ class AuthAdapter implements AdapterInterface
       $rs->CursorType =adOpenKeyset;
       $rs->Open($c);
         
-       $admin= $rs->FetchEntity(Users::class);
+       $users= $rs->FetchEntity(Users::class);
 
         // If there is no such user, return 'Identity Not Found' status.
-        if ($admin == null) {
+        if ($users == null) {
             return new Result(
                 Result::FAILURE_IDENTITY_NOT_FOUND, 
                 null, 
-                ['Invalid credentials.']);
+                ['Пользователь не найден']);
         }
 
         $bcrypt = new Bcrypt();
-        $passwordHash = $admin->getPassword();//хеш пароля из базы
+        $passwordHash = $users->getPassword();//хеш пароля из базы
 
         if ($bcrypt->verify($this->password, $passwordHash)) {
-            //спешная авторизация, возвращаем успех и ID записи из таблицы админов
+            //успешная авторизация, возвращаем успех и ID записи из таблицы админов
             return new Result(
                     Result::SUCCESS, 
-                    $admin->getId(), 
+                    $users->getId(), 
                     ['Авторизация успешна']);
         }
 
         return new Result(
                 Result::FAILURE_CREDENTIAL_INVALID, 
                 null, 
-                ['Invalid credentials.']);
+                ['Неверный пароль или иная ошибка']);
     }
 
 }

@@ -239,10 +239,6 @@ class UserManager
             // шифруем пароль
             $bcrypt = new Bcrypt();
             $data['password'] = $bcrypt->create($data['password']);
-            if (!empty($data['id'])){
-                /*удалим сохраненные данные если есть смена пароля и у нас обновление существующего юзера*/
-                 $this->connection->Execute("delete from users_save_me where users=".(int)$data['id']);
-            }
         }
         
         //пробежим по базовой таблице
