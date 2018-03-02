@@ -13,13 +13,19 @@ use Exception;
 
 class Acl implements AclInterface
 {
-    protected $connection;
+    protected $connection;              /*соединение с базой*/
+    protected $user;                    /*экземпляр сервиса User*/
     protected static $root_owner;    /*доступы которые дает главный владелец (root) по умолчанию*/
-    protected $r_action=[256,32,4];
+    protected static $actions=[
+                    "r"=>[256,32,4],
+                    "w"=>[128,16,2],
+                    "x"=>[64,8,1]
+                ];
 
-public function __construct($connection,$config) 
+public function __construct($connection,$config,$user) 
 {
     $this->connection=$connection;
+    $this->user=$user;
     if (!empty($config["permission"]["root_owner"]) && is_array($config["permission"]["root_owner"]) && count($config["permission"]["root_owner"])==3){
         self::$root_owner=$config["permission"]["root_owner"];
     } else {
@@ -52,10 +58,60 @@ public function isAllowed($action = null, $permission = null, $parent_permission
         $parent_permission=self::$root_owner;
     }
     if (!is_string($action) || !in_array($action,["r","w","x","d"])) {
-        throw new Exception("Неверный 1-й параметр в isAllowed, должен быть символ: r,w,x");
+        throw new Exception("Неверный 1-й параметр в isAllowed, должен быть символ: r,w,x,d");
     }
     $permission=$this->NormalizePermission($permission);
     $parent_permission=$this->NormalizePermission($parent_permission);
+    
+    $user=$this->user->getUserId();
+    $group=$this->user->getGroupIds();
+    
+    /*для root и группы Администраторов всегда все разрешено*/
+    if ($user==1 || in_array((int)$parent_permission[1], $group)){
+        return true;
+    }
+    
+    switch ($action){
+        case "r":
+        case "w":
+        case "x":{
+            /*смотрим разрешение для владельца*/
+            if ($user==(int)$parent_permission[0]){
+                if (self::$actions[$action][0] & $permission[2]) {return true;}
+            }
+
+            /*смотрим для группы*/
+            if (in_array((int)$parent_permission[1], $group)){
+                if (self::$actions[$action][1] & $permission[2]) {return true;}
+            }
+            /*юзер не принадлежит ни к кому, смотрим разрешения "для всех"*/
+            if (self::$actions[$action][2] & $permission[2]) {return true;}
+
+            break;
+        }
+        
+        case "d":{
+            /*удаление смотрим по особому, нужно учитывать бит Sticky (512)
+            * для владельца все как обычно, если разрешен w, значит можно удалить
+            */
+            if ($user==(int)$parent_permission[0]){
+                if (self::$actions[$action][0] & $permission[2]) {return true;}
+            }
+            if (!$permission[2] & 512){
+                /*если не установлен Sticky (512) - тогда смотрим остальным разрешение*/
+                /*смотрим для группы*/
+                if (in_array((int)$parent_permission[1], $group)){
+                    if (self::$actions[$action][1] & $permission[2]) {return true;}
+                }
+                /*юзер не принадлежит ни к кому, смотрим разрешения "для всех"*/
+                if (self::$actions[$action][2] & $permission[2]) {return true;}
+
+                }
+            break;
+        }
+    }
+    /*доступ запрещен*/
+    return false;
 }
 
     

@@ -21,6 +21,11 @@ class User
     * в него передается отсюда все для работы с авторизованным
     */
     protected $UserManager;
+    
+    /**
+    * хранит объект системного кеша
+    */
+    //protected $Cache;
 
     /**
      * @return AuthenticationServiceInterface
@@ -49,7 +54,13 @@ class User
     {
         return $this->UserManager;
     }
-    
+
+    /*установить Cache* /
+    public function setCache($Cache)
+    {
+        $this->Cache=$Cache;
+    }
+
     /*повторяет метод identity плагина zend-mvc-plugin-identity
     * если юзер авторизован, возвращается его ID, если нет то ничего
     */
@@ -65,8 +76,25 @@ class User
             return;
         }
 
-        return $this->authenticationService->getIdentity();
+        return (int)$this->authenticationService->getIdentity();
 
+    }
+    /**
+    * получить ID авторизованного юзера, эквивалент identity()
+    * возвращает int число>0
+    */
+    public function getUserId()
+    {
+        return $this->identity();
+    }
+    
+    /**
+    * получить ID группы авторизованного юзера
+    * возвращает массив ID групп которым принадлежит юзер
+    */
+    public function getGroupIds()
+    {
+        return $this->UserManager->getGroupIds($this->identity());
     }
 
 

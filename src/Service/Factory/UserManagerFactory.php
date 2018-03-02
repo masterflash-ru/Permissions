@@ -14,7 +14,8 @@ class UserManagerFactory
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {        
         $connection=$container->get('ADO\Connection');
+        $cache=$container->get('DefaultSystemCache');
                         
-        return new $requestedName($connection);
+        return new $requestedName($connection,$cache);
     }
 }

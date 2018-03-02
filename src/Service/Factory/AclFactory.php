@@ -3,6 +3,7 @@ namespace Mf\Permissions\Service\Factory;
 
 use Interop\Container\ContainerInterface;
 
+use Mf\Permissions\Service\User;
 
 /**
  */
@@ -15,6 +16,7 @@ class AclFactory
     {        
         $connection=$container->get('ADO\Connection');
         $config=$container->get('config');
-        return new $requestedName($connection,$config);
+        $user=$container->get(User::class);
+        return new $requestedName($connection,$config,$user);
     }
 }

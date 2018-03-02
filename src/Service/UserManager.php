@@ -22,6 +22,10 @@ class UserManager
      */
     protected $connection;
     
+    /**
+    * кеш
+    */
+    protected $cache;
     /*
     *массив имен колонок в базовой таблице юзеров
     */
@@ -37,23 +41,37 @@ class UserManager
     /**
      * Constructs the service.
      */
-    public function __construct($connection) 
+    public function __construct($connection,$cache) 
     {
         $this->connection = $connection;
-        $rs=new RecordSet();
-        $rs->Open("show columns from users",$this->connection);
-        while (!$rs->EOF){
-            $this->db_field_base[]=$rs->Fields->Item["Field"]->Value;
-            $rs->MoveNext();
+        $this->cache=$cache;
+        
+        $key="users_tables_structure";
+        //пытаемся считать из кеша
+        $result = false;
+        $users_tables_structure= $this->cache->getItem($key, $result);
+        if (!$result) {
+            //промах кеша, создаем
+            $rs=new RecordSet();
+            $rs->Open("show columns from users",$this->connection);
+            while (!$rs->EOF){
+                $users_tables_structure[0][]=$rs->Fields->Item["Field"]->Value;
+                $rs->MoveNext();
+            }
+            $rs->Close();
+            $rs=new RecordSet();
+            $rs->Open("show columns from users_ext",$this->connection);
+            while (!$rs->EOF){
+                $users_tables_structure[1][]=$rs->Fields->Item["Field"]->Value;
+                $rs->MoveNext();
+            }
+            $rs->Close();
+
+            //сохраним в кеш
+            $this->cache->setItem($key, $users_tables_structure);
         }
-        $rs->Close();
-        $rs=new RecordSet();
-        $rs->Open("show columns from users_ext",$this->connection);
-        while (!$rs->EOF){
-            $this->db_field_ext[]=$rs->Fields->Item["Field"]->Value;
-            $rs->MoveNext();
-        }
-        $rs->Close();
+        $this->db_field_base=$users_tables_structure[0];
+        $this->db_field_ext=$users_tables_structure[1];
 
     }
     
@@ -84,16 +102,25 @@ class UserManager
     */
     public function GetUserIdInfo($id)
     {
-        //читаем и заполняем сущность "юзер"
-        $this->connection->BeginTrans();
-        $rs=$this->connection->Execute("select * from users u,users_ext e where u.id=e.id and u.id=".(int)$id);
-        $this->connection->CommitTrans();
+        $id=(int)$id;
+        $key="users_{$id}";
+        //пытаемся считать из кеша
+        $result = false;
+        $user= $this->cache->getItem($key, $result);
+        if (!$result) {
+            //читаем и заполняем сущность "юзер"
+            $this->connection->BeginTrans();
+            $rs=$this->connection->Execute("select * from users u,users_ext e where u.id=e.id and u.id=".(int)$id);
+            $this->connection->CommitTrans();
 
-        if ($rs->EOF){
-            throw new \Exception("Юзера с id={$id} не существует");
+            if ($rs->EOF){
+                throw new \Exception("Юзера с id={$id} не существует");
+            }
+            $user=$rs->FetchEntity(Users::class);
+            $rs->Close();
+            //сохраним в кеш
+            $this->cache->setItem($key, $user);
         }
-        $user=$rs->FetchEntity(Users::class);
-        $rs->Close();
         return $user;
     }
 
@@ -105,6 +132,8 @@ class UserManager
      */
     public function updateUserInfo ($userid, $data) 
     {
+        $userid=(int)$userid;
+        $this->cache->removeItems("users_{$userid}");
         return $this->_updateUserInfo($userid, $data);
     }
     
@@ -126,6 +155,45 @@ class UserManager
         $rs->Open($c);
 
         return !$rs->EOF;
+    }
+    
+    /**
+    * получить массив ID групп, которым принадлежит юзер с id
+    * user_id - ID юзера
+    * возвращается массив всегда, если юзер не найден - исключение
+    */
+    public function getGroupIds($user_id)
+    {
+        $user_id=(int)$user_id;
+        $key="group_users_{$user_id}";
+        //пытаемся считать из кеша
+        $result = false;
+        $group= $this->cache->getItem($key, $result);
+        if (!$result) {
+            //читаем и заполняем сущность "юзер"
+            $this->connection->BeginTrans();
+            $rs=$this->connection->Execute("select users_group from users2group  where users={$user_id}
+                                            union
+                                            select ugt.parent_id as users_group from users_group_tree as ugt,users2group ug 
+                                                where ugt.id=ug.users_group and ug.users={$user_id}");
+            $this->connection->CommitTrans();
+
+            if ($rs->EOF){
+                throw new \Exception("Юзера с id={$user_id} не существует");
+            }
+            $group=[];
+            while (!$rs->EOF){
+                $group[]=(int)$rs->Fields->Item["users_group"]->Value;
+                $rs->MoveNext();
+            }
+            $group=array_unique($group);
+            
+            $rs->Close();
+            //сохраним в кеш
+            $this->cache->setItem($key, $group);
+        }
+        return $group;
+    
     }
     
     

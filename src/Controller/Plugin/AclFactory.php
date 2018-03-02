@@ -12,6 +12,7 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 use Mf\Permissions\Service\Acl;
 
+
 class AclFactory implements FactoryInterface
 {
     /**
@@ -20,7 +21,7 @@ class AclFactory implements FactoryInterface
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {        
         $acl=$container->get(Acl::class);
-                        
+        
         return new $requestedName($acl);
     }
     /**
