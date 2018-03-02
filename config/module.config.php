@@ -20,6 +20,8 @@ return [
         'aliases'=>[
             "acl"=>Service\Acl::class,
             "Acl"=>Service\Acl::class,
+            "users"=>Service\UserManager::class,
+            "Users"=>Service\UserManager::class,
         ],
     ],
     "permission"=>[
@@ -45,15 +47,19 @@ return [
             1,1,0744
         ],
     ],
-    /*помощник в контроллеры для проверки доступа*/
+    /*помощник в контроллеры для проверки доступа и для работы с авторизованным юзером*/
     'controller_plugins' => [
         'aliases' => [
             'acl' => Controller\Plugin\Acl::class,
             'Acl' => Controller\Plugin\Acl::class,
             'Zend\Mvc\Controller\Plugin\Acl' => Controller\Plugin\Acl::class,
+            'user' => Controller\Plugin\User::class,
+            'User' => Controller\Plugin\User::class,
+            'Zend\Mvc\Controller\Plugin\User' => Controller\Plugin\User::class,
         ],
         'factories' => [
             Controller\Plugin\Acl::class => Controller\Plugin\AclFactory::class,
+            Controller\Plugin\User::class => Controller\Plugin\UserFactory::class,
         ],
     ],
 

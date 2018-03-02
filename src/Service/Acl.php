@@ -38,8 +38,8 @@ public function hasResource($resource)
     
     
     
-/* метод проверяет разрешено то или иное действие (true или false), передается варианты действий, аналогичных в UNIX, это r, w, x
-* $action - строка действия: r (чтение), w (запись), x (исполнение/поиск)
+/* метод проверяет разрешено то или иное действие (true или false), передается варианты действий, аналогичных в UNIX, это r, w, x, d
+* $action - строка действия: r (чтение), w (запись), x (исполнение/поиск), d удаление
 * $permission - срока вида "ID_юзера,ID_его_группы,код_доступа", например, 
 *       "1,1,0777" - юзер 1, группа 1, код доступа 0777 (в восмеричном виде, можно любое число)
 * можно передать все это в виде массива, то же пример: [1,1,0777]
@@ -51,7 +51,7 @@ public function isAllowed($action = null, $permission = null, $parent_permission
     if (empty($parent_permission)) {
         $parent_permission=self::$root_owner;
     }
-    if (!is_string($action) || !in_array($action,["r","w","x"])) {
+    if (!is_string($action) || !in_array($action,["r","w","x","d"])) {
         throw new Exception("Неверный 1-й параметр в isAllowed, должен быть символ: r,w,x");
     }
     $permission=$this->NormalizePermission($permission);
