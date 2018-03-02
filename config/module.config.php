@@ -16,6 +16,7 @@ return [
             Service\AuthManager::class => Service\Factory\AuthManagerFactory::class,
             Service\UserManager::class => Service\Factory\UserManagerFactory::class,
             Service\Acl::class => Service\Factory\AclFactory::class,
+            Service\User::class => Service\Factory\UserFactory::class,
         ],
         'aliases'=>[
             "acl"=>Service\Acl::class,

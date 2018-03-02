@@ -6,7 +6,7 @@
 namespace Mf\Permissions\Controller\Plugin;
 
 
-use Zend\Authentication\AuthenticationServiceInterface;
+
 use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 use Exception;
 
@@ -16,42 +16,14 @@ use Exception;
 class User extends AbstractPlugin
 {
     /**
-     * @var AuthenticationServiceInterface
-     */
-    protected $authenticationService;
-    
-    /**
-    * экземпляр UserManager - он работает со всеми юзеарми
-    * в него передается отсюда все для работы с авторизованным
+    * экземпляр сервиса Mf\Permissions\Service\User
     */
-    protected $UserManager;
-
-    /**
-     * @return AuthenticationServiceInterface
-     */
-    public function getAuthenticationService()
-    {
-        return $this->authenticationService;
-    }
-
-    /**
-     * @param AuthenticationServiceInterface $authenticationService
-     */
-    public function setAuthenticationService(AuthenticationServiceInterface $authenticationService)
-    {
-        $this->authenticationService = $authenticationService;
-    }
-
-    /*установить UserManager*/
-    public function setUserManager($UserManager)
-    {
-        $this->UserManager=$UserManager;
-    }
+    protected $User;
     
-    /*получить UserManager*/
-    public function getUserManager()
+    public function __construct($User)
     {
-        return $this->UserManager;
+        $this->User=$User;
+
     }
 
     /**
@@ -68,18 +40,7 @@ class User extends AbstractPlugin
     */
     public function identity()
     {
-        if (! $this->authenticationService instanceof AuthenticationServiceInterface) {
-            throw new Exception(
-                'No AuthenticationServiceInterface instance provided; cannot lookup identity'
-            );
-        }
-
-        if (! $this->authenticationService->hasIdentity()) {
-            return;
-        }
-
-        return $this->authenticationService->getIdentity();
-
+        return $this->User->identity();
     }
 
 
