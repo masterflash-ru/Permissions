@@ -109,6 +109,7 @@ CREATE TABLE `users_ext` (
 
 LOCK TABLES `users_ext` WRITE;
 /*!40000 ALTER TABLE `users_ext` DISABLE KEYS */;
+INSERT INTO `users_ext` VALUES (1);
 /*!40000 ALTER TABLE `users_ext` ENABLE KEYS */;
 UNLOCK TABLES;
 
