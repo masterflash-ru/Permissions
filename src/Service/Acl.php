@@ -14,18 +14,20 @@ use Exception;
 class Acl implements AclInterface
 {
     protected $connection;              /*соединение с базой*/
-    protected $user;                    /*экземпляр сервиса User*/
+    protected $UserService;                    /*экземпляр сервиса UserService*/
     protected static $root_owner;    /*доступы которые дает главный владелец (root) по умолчанию*/
     protected static $actions=[
                     "r"=>[256,32,4],
                     "w"=>[128,16,2],
                     "x"=>[64,8,1]
                 ];
+    protected $UserId;
+    protected $GroupId;
 
-public function __construct($connection,$config,$user) 
+public function __construct($connection,$config,$UserService) 
 {
     $this->connection=$connection;
-    $this->user=$user;
+    $this->UserService=$UserService;
     if (!empty($config["permission"]["root_owner"]) && is_array($config["permission"]["root_owner"]) && count($config["permission"]["root_owner"])==3){
         self::$root_owner=$config["permission"]["root_owner"];
     } else {
@@ -63,8 +65,11 @@ public function isAllowed($action = null, $permission = null, $parent_permission
     $permission=$this->NormalizePermission($permission);
     $parent_permission=$this->NormalizePermission($parent_permission);
     
-    $user=$this->user->getUserId();
-    $group=$this->user->getGroupIds();
+    $user=$this->getUserId();
+    $group=$this->getGroupIds();
+    
+    /*если юзера нет, или он не связан с группой - это ошибка скорей всего, поэтому доступ закрыт*/
+    if (empty($user) || empty($group)) {return false;}
     
     /*для root и группы Администраторов всегда все разрешено*/
     if ($user==1 || in_array((int)$parent_permission[1], $group)){
@@ -93,6 +98,7 @@ public function isAllowed($action = null, $permission = null, $parent_permission
         case "d":{
             /*удаление смотрим по особому, нужно учитывать бит Sticky (512)
             * для владельца все как обычно, если разрешен w, значит можно удалить
+            * для остальных, проверяем, если этот бит не установлен
             */
             if ($user==(int)$parent_permission[0]){
                 if (self::$actions[$action][0] & $permission[2]) {return true;}
@@ -106,7 +112,7 @@ public function isAllowed($action = null, $permission = null, $parent_permission
                 /*юзер не принадлежит ни к кому, смотрим разрешения "для всех"*/
                 if (self::$actions[$action][2] & $permission[2]) {return true;}
 
-                }
+            }
             break;
         }
     }
@@ -115,6 +121,30 @@ public function isAllowed($action = null, $permission = null, $parent_permission
 }
 
     
+/**
+* внутренняя, возвращает ID авторизованного юзера
+* и сохраняет в этом объекте
+*/
+protected function getUserId()
+{
+    if (empty($this->UserId)){
+        $this->UserId=$this->UserService->getUserId();
+    }
+    return $this->UserId;
+}
+
+/**
+* внутренняя возвращает массив ID групп, которым принадлежит авторизованный юзер
+*/
+protected function getGroupIds()
+{
+    if (empty($this->GroupId)){
+        $this->GroupId=$this->UserService->getGroupIds();
+    }
+    return $this->GroupId;
+
+}
+
 /*
 *проверяет верность параметров доступа (сама структура)
 *$permission - либо массив с 3-мя элементами, либо строка "ID_юзера,ID_его_группы,код_доступа"

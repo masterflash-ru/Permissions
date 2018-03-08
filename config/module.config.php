@@ -25,6 +25,9 @@ return [
             "Users"=>Service\UserManager::class,
         ],
     ],
+    'controllers' => [
+        'permission' => [],
+    ],
     "permission"=>[
         /*список допустимых состояний регистрированных юзеров, ключ - это код состояния*/
         'users_status' => [

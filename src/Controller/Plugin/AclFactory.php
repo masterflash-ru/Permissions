@@ -21,8 +21,8 @@ class AclFactory implements FactoryInterface
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {        
         $acl=$container->get(Acl::class);
-        
-        return new $requestedName($acl);
+        $config=$container->get("config");
+        return new $requestedName($acl,$config);
     }
     /**
      * Create and return Acl instance
