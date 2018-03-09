@@ -94,7 +94,7 @@ class UserManager
     
     /*
     *получить инфу по юзеру c id
-    *возвращает users  
+    *возвращает users  (экземпляр объекта)
     */
     public function GetUserIdInfo($id)
     {

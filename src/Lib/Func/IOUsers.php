@@ -27,7 +27,8 @@ if ($action==-1) {
                         u.date_registration<=\"{$obj->pole_dop[1]} 23:59:59\" or isnull(u.date_registration)) 
                     and
                     (\"{$obj->pole_dop[4]}\">0 and u.login like concat(char(\"{$obj->pole_dop[4]}\"),\"%\") or \"{$obj->pole_dop[4]}\"=0) 
-                    /*and id in(select users from users2group where users_group={$obj->pole_dop[3]})*/");
+                    and 
+                    (u.id in(select users from users2group where users_group={$obj->pole_dop[3]}) and {$obj->pole_dop[3]}>0 or {$obj->pole_dop[3]}=0 )    ");
 //\Zend\Debug\Debug::dump($arr);
     return $arr;
 }
@@ -36,8 +37,13 @@ if ($action==-1) {
 if ($action==-2){
     //получить UserManager - экземпляр
     $UserManager=$obj->container->get(UserManager::class);
-    $UserManager->addUser ($tab_rec);
-	}
+    $user=$UserManager->addUser ($tab_rec);
+    if ((int)$obj->pole_dop[3]>0){
+        //добавим группу которая выбрана в фильтре интерфейса
+        $UserManager->setGroupIds($user->getId(),[(int)$obj->pole_dop[3]]);
+    }
+    
+}
 
 //удаление строки
 if ($action==-3){
