@@ -86,10 +86,6 @@ class UserManager
         if(empty($data['login'])) {
             throw new Exception("Нет обязательного параметра login, добавить нового юзера нельзя");
         }
-        if(empty($data['password'])) {
-            throw new Exception("Нет обязательного параметра password, добавить нового юзера нельзя");
-        }
-
         if($this->isUserExists($data['login'])) {
             throw new Exception("Пользователь с логином " . $data['login'] . " уже зарегистрирован");
         }
@@ -133,7 +129,7 @@ class UserManager
     public function updateUserInfo ($userid, $data) 
     {
         $userid=(int)$userid;
-        $this->cache->removeItems("users_{$userid}");
+        $this->cache->removeItem("users_{$userid}");
         return $this->_updateUserInfo($userid, $data);
     }
     
@@ -177,10 +173,6 @@ class UserManager
                                             select ugt.parent_id as users_group from users_group_tree as ugt,users2group ug 
                                                 where ugt.id=ug.users_group and ug.users={$user_id}");
             $this->connection->CommitTrans();
-
-            if ($rs->EOF){
-                throw new \Exception("Юзера с id={$user_id} не существует");
-            }
             $group=[];
             while (!$rs->EOF){
                 $group[]=(int)$rs->Fields->Item["users_group"]->Value;
@@ -195,7 +187,29 @@ class UserManager
         return $group;
     
     }
-    
+
+    /**
+    *привязать юзера к группам, старые связи будут удалены
+    * $user_id - int - ID юзера
+    * $group_ids - массив ID групп, к которым привяжется юзер
+    */
+    public function setGroupIds($user_id,array $group_ids)
+    {
+        $user_id=(int)$user_id;
+        //удалим старые связи
+        $this->connection->Execute("delete from users2group where users={$user_id}");
+        $rs1=new RecordSet();
+        $rs1->CursorType = adOpenKeyset;
+        $rs1->open("SELECT * FROM users2group where users={$user_id}",$this->connection);
+        
+        foreach ($group_ids as $gr){
+            $rs1->AddNew();
+            $rs1->Fields->Item['users']->Value=$user_id;
+            $rs1->Fields->Item['users_group']->Value=$gr;
+            $rs1->Update();
+        }
+        $this->cache->removeItem("group_users_{$user_id}");
+    }
     
     /**
      * Generates a password reset token for the user. This token is then stored in database and 
