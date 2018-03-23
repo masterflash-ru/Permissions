@@ -79,14 +79,27 @@ class AuthAdapter implements AdapterInterface
         }
 
         $bcrypt = new Bcrypt();
-        $passwordHash = $users->getPassword();//хеш пароля из базы
 
-        if ($bcrypt->verify($this->password, $passwordHash)) {
+        if ($bcrypt->verify($this->password, $users->getPassword())) {
             //успешная авторизация, возвращаем успех и ID записи из таблицы админов
             return new Result(
                     Result::SUCCESS, 
                     $users->getId(), 
                     ['Авторизация успешна']);
+        }
+        
+        /*проверяем по временному паролю, для варианта восстановления пароля*/
+
+        /*смотрим дату, годен ли временный пароль*/
+        if ($users->getTemp_Date()){
+            /*собственно пароль*/
+            if ($bcrypt->verify($this->password, $users->getTemp_Password()) && strtotime($users->getTemp_Date())-time() >0) {
+                //успешная авторизация, возвращаем успех и ID записи из таблицы админов
+                return new Result(
+                        Result::SUCCESS, 
+                        $users->getId(), 
+                        ['Авторизация успешна по временному паролю']);
+            }
         }
 
         return new Result(

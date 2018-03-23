@@ -212,32 +212,14 @@ class UserManager
     }
     
     /**
-     * Generates a password reset token for the user. This token is then stored in database and 
-     * sent to the user's E-mail address. When the user clicks the link in E-mail message, he is 
-     * directed to the Set Password page.
-     * /
-    public function generatePasswordResetToken($user)
+     * генерация уникальной случайной строки для генерации адреса 
+     * просто возвращает уникальную строку - это и есть новый пароль
+     * 
+     */
+    public function generatePasswordReset($passwordLen=10)
     {
-        // Generate a token.
-        $token = Rand::getString(32, '0123456789abcdefghijklmnopqrstuvwxyz', true);
-        $user->setPasswordResetToken($token);
-        
-        $currentDate = date('Y-m-d H:i:s');
-        $user->setPasswordResetTokenCreationDate($currentDate);  
-        
-        $this->entityManager->flush();
-        
-        $subject = 'Password Reset';
-            
-        $httpHost = isset($_SERVER['HTTP_HOST'])?$_SERVER['HTTP_HOST']:'localhost';
-        $passwordResetUrl = $_SERVER['REQUEST_SCHEME'] . $httpHost . '/set-password?token=' . $token;
-        
-        $body = 'Please follow the link below to reset your password:\n';
-        $body .= "$passwordResetUrl\n";
-        $body .= "If you haven't asked to reset your password, please ignore this message.\n";
-        
-        // Send email to user.
-        mail($user->getEmail(), $subject, $body);
+        //генерируем временный пароль и дату его годности
+        return Rand::getString($passwordLen, '0123456789!@#%$abcdefghijklmnopqrstuvwxyz', true);
     }
     
     /**
@@ -321,6 +303,11 @@ class UserManager
             // шифруем пароль
             $bcrypt = new Bcrypt();
             $data['password'] = $bcrypt->create($data['password']);
+        }
+        if (isset($data['temp_password'])){
+            // шифруем пароль
+            $bcrypt = new Bcrypt();
+            $data['temp_password'] = $bcrypt->create($data['temp_password']);
         }
         
         //пробежим по базовой таблице
