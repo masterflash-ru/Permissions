@@ -132,6 +132,27 @@ class UserManager
         $this->cache->removeItem("users_{$userid}");
         return $this->_updateUserInfo($userid, $data);
     }
+
+    /**
+     * проверяет наличие юзера с указаным $confirm хешем в базе.     
+     *возвращает  users  (экземпляр объекта), если не существует - исключение
+     */
+    public function getUserConfirm($confirm) 
+    {
+        $c=new Command();
+        $c->NamedParameters=true;
+        $c->ActiveConnection=$this->connection;
+        $p=$c->CreateParameter('confirm', adChar, adParamInput, 127, $confirm);//генерируем объек параметров
+        $c->Parameters->Append($p);//добавим в коллекцию
+        $c->CommandText="select id from users where confirm_hash=:confirm";
+
+        $rs=new RecordSet();
+        $rs->Open($c);
+        if ($rs->EOF){
+            throw new \Exception("Юзера с confirm_hash={$confirm} не существует");
+        }
+        return $this->GetUserIdInfo((int)$rs->Fields->Item["id"]->Value);
+    }
     
     
     /**
