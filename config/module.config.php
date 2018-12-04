@@ -66,5 +66,24 @@ return [
             Controller\Plugin\User::class => Controller\Plugin\UserFactory::class,
         ],
     ],
+    // Настройка кэша.
+    'caches' => [
+        'DefaultSystemCache' => [
+            'adapter' => [
+                'name'    => Filesystem::class,
+                'options' => [
+                    'cache_dir' => './data/cache',
+                    'ttl' => 60*60*2 
+                ],
+            ],
+            'plugins' => [
+                [
+                    'name' => Serializer::class,
+                    'options' => [
+                    ],
+                ],
+            ],
+        ],
+    ],
 
 ];
