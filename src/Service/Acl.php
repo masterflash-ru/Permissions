@@ -13,8 +13,8 @@ use Exception;
 
 class Acl implements AclInterface
 {
-    protected $connection;              /*соединение с базой*/
-    protected $UserService;                    /*экземпляр сервиса UserService*/
+
+    protected $UserService;           /*экземпляр сервиса UserService*/
     protected static $root_owner;    /*доступы которые дает главный владелец (root) по умолчанию*/
     protected static $actions=[
                     "r"=>[256,32,4],
@@ -24,9 +24,9 @@ class Acl implements AclInterface
     protected $UserId;
     protected $GroupId;
 
-public function __construct($connection,$config,$UserService) 
+public function __construct($config,$UserService) 
 {
-    $this->connection=$connection;
+
     $this->UserService=$UserService;
     if (!empty($config["permission"]["root_owner"]) && is_array($config["permission"]["root_owner"]) && count($config["permission"]["root_owner"])==3){
         self::$root_owner=$config["permission"]["root_owner"];

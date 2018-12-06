@@ -1,6 +1,6 @@
 {
     "name": "masterflash-ru/permissions",
-    "description": "Выделеный сервис контроля доступа к ресурсам Simba как в UNIX и сервис авторизации",
+    "description": "Выделеный сервис контроля доступа к ресурсам Simba как в UNIX",
     "type": "Service",
     "license": "BSD-3-Clause",
     "keywords": [

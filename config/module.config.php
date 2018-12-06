@@ -21,9 +21,6 @@ return [
             "Acl"=>Service\Acl::class,
         ],
     ],
-    'controllers' => [
-        'permission' => [],
-    ],
     "permission"=>[
         "root_owner" =>[
             1,1,0744
@@ -34,7 +31,6 @@ return [
         'aliases' => [
             'acl' => Controller\Plugin\Acl::class,
             'Acl' => Controller\Plugin\Acl::class,
-            'Zend\Mvc\Controller\Plugin\Acl' => Controller\Plugin\Acl::class,
         ],
         'factories' => [
             Controller\Plugin\Acl::class => Controller\Plugin\AclFactory::class,
