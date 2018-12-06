@@ -12,7 +12,8 @@
     "require": {
         "php": "^7.1",
         "zendframework/zend-permissions-acl": "^2.6",
-        "masterflash-ru/ado": "^2.0"
+        "masterflash-ru/ado": "^2.0",
+        "masterflash-ru/users": "^2.0"
     },
     "autoload": {
         "psr-4": {
