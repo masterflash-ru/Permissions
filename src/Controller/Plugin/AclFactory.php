@@ -22,7 +22,7 @@ class AclFactory implements FactoryInterface
     {        
         $acl=$container->get(Acl::class);
         $config=$container->get("config");
-        return new $requestedName($acl,$config);
+        return new $requestedName($acl,$config["permission"]["controllers"]);
     }
     /**
      * Create and return Acl instance

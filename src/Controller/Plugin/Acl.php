@@ -19,44 +19,77 @@ class Acl extends AbstractPlugin
     protected $AclService;
     
     /**
-    * весь конфиг ????
+    * конфиг, только секция $config["permission"]["controllers"]
     */
     protected $config;
     
+    /*полное имя класса контроллера*/
+    protected $controller;
     
+    /*имя метода контроллера*/
+    protected $action;
     
 public function __construct($AclService,$config) 
 {
     $this->AclService = $AclService;
     $this->config=$config;
 }
+
 /*
-*повторяет сервис Acl, ему передается управление при обращениях сюда
-*__invoke() - с параметрами это точная копия isAllowed сервиса Acl (не путать с Zend-овским ACL!!!)
-* если все параметры равны null - возвращается экземпляр этого объекта 
-*
-* метод проверяет разрешено то или иное действие, передается варианты действий, аналогичных в UNIX, это r, w, x, d
-* $action - строка действия: r (чтение), w (запись), x (исполнение/поиск)
-* $permission - срока вида "ID_юзера,ID_его_группы,код_доступа", например, 
-*       "1,1,0777" - юзер 1, группа 1, код доступа 0777 (в восмеричном виде, можно любое число)
-* можно передать все это в виде массива, то же пример: [1,1,0777]
-* $parent_permission - точно такая же структура в которой информация о родительских доступах
+*возвращает сам этот объект
 */    
-public function __invoke($action = null, $permission = null, $parent_permission = null)
+public function __invoke()
 {
-    /*если все пусто вернем сам этот объект*/
-   if (empty($action) && empty($permission) && empty($parent_permission)){
-       return $this;
-   }
+    $matches = $this->getController()->getEvent()->getRouteMatch();
+    $this->setController($matches->getParam('controller', null));
+    $this->setAction($matches->getParam('action', null));
+    return $this;
 }
 
 
 /*
 * повторяет одноименный метод сервиса
 */
-public function isAllowed($action = null, $permission = null, $parent_permission = null)
+public function isAllowed($action = null)
 {
-    return $this->AclService->isAllowed($action, $permission, $parent_permission);
+    if (!isset($this->config[$this->controller][$this->action])){
+        return false;
+    }
+    /*получить из конфига доступ к методу данного контроллера*/
+    $p=$this->config[$this->controller][$this->action];
+    return $this->AclService->isAllowed($action, $p);
+}
+
+/*
+*установить имя контроллера
+*/
+public function setController($controller)
+{
+    $this->controller=$controller;
+}
+
+/*
+*установить имя метода контроллера
+*/
+public function setAction($action)
+{
+    $this->action=$action;
+}
+
+/*
+*получить имя контроллера
+*/
+public function getController()
+{
+    return $this->controller;
+}
+
+/*
+*получить имя метода контроллера
+*/
+public function getAction()
+{
+    return $this->action;
 }
 
 

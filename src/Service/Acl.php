@@ -23,16 +23,21 @@ class Acl implements AclInterface
                 ];
     protected $UserId;
     protected $GroupId;
+    protected $GuestUser;
+    protected $GuestGroup;
 
 public function __construct($config,$UserService) 
 {
 
     $this->UserService=$UserService;
-    if (!empty($config["permission"]["root_owner"]) && is_array($config["permission"]["root_owner"]) && count($config["permission"]["root_owner"])==3){
-        self::$root_owner=$config["permission"]["root_owner"];
+    if (!empty($config["root_owner"]) && is_array($config["root_owner"]) && count($config["root_owner"])==3){
+        self::$root_owner=$config["root_owner"];
     } else {
         self::$root_owner=[1,1,0444];
     }
+    /*гостевые записи*/
+    $this->GuestUser=$config["guest"][0];
+    $this->GuestGroup=$config["guest"][1];
 }
 
     
@@ -53,6 +58,9 @@ public function hasResource($resource)
 * можно передать все это в виде массива, то же пример: [1,1,0777]
 * $parent_permission - точно такая же структура в которой информация о родительских доступах
 * если она не задана, берется root_owner из конфига - это корневой владелец и его доступы
+
+ВНИМАНИЕ! если никакой юзер не авторизован, и вызывается этот метод для проверки доступа, подразумевается, что защел гость и все проверяется с 
+гостевой записью, см. конфиг, эти записи есть в базе
 */    
 public function isAllowed($action = null, $permission = null, $parent_permission = null)
 {
@@ -68,6 +76,17 @@ public function isAllowed($action = null, $permission = null, $parent_permission
     $user=$this->getUserId();
     $group=$this->getGroupIds();
     
+    /*если никто не авторизовался, и идет проверка на доступ, то подставляем гостевые записи, они есть в базе и совпадают 
+    *с конфигом пакета
+    */
+    if (empty($user)){
+        $user=$this->GuestUser;
+    }
+    if (empty($group)){
+        $group=[$this->GuestGroup];
+    }
+    
+
     /*если юзера нет, или он не связан с группой - это ошибка скорей всего, поэтому доступ закрыт*/
     if (empty($user) || empty($group)) {return false;}
     
