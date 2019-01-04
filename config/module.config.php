@@ -23,13 +23,12 @@ return [
     ],
     /*конфиг доступов по умолчанию, все пусто*/
     "permission"=>[
-        "root_owner" =>[/*корневой владелец и доступ по умолчанию*/
-            1,1,0744
-        ],
+        /*корневой владелец и доступ по умолчанию*/
+        "root_owner" =>[1,1,0744],
         /*гость, используется если никто не авторизован, и идет проверка доступа, в базе с этими ID есть записи!*/
         "guest"=>[2,2,0],
-        'controllers'=>[/*доступы к контроллерам*/
-        ],
+        'controllers'=>[/*доступы к контроллерам*/],
+        "view_helpers"=>[/*доступы к помощникам видов*/],
     ],
     /*помощник в контроллеры для проверки доступа и для работы с авторизованным юзером*/
     'controller_plugins' => [
@@ -41,6 +40,16 @@ return [
             Controller\Plugin\Acl::class => Controller\Plugin\AclFactory::class,
         ],
     ],
+    'view_helpers' => [
+        'factories' => [
+            View\Helper\Acl::class => View\Helper\AclFactory::class,
+        ],
+        'aliases' => [
+            'acl' => View\Helper\Acl::class,
+            'Acl' => View\Helper\Acl::class,
+        ],
+    ],
+
     // Настройка кэша.
     'caches' => [
         'DefaultSystemCache' => [

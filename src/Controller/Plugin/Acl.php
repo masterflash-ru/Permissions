@@ -19,7 +19,7 @@ class Acl extends AbstractPlugin
     protected $AclService;
     
     /**
-    * конфиг, только секция $config["permission"]["controllers"]
+    * конфиг, только секция $config["permission"]["access_list"]
     */
     protected $config;
     
@@ -37,27 +37,46 @@ public function __construct($AclService,$config)
 
 /*
 *возвращает сам этот объект
+* $controller - полное имя контроллера к которому проверяем доступ, по умолчанию текущий
+* $action - имя метода контроллера к которому проверяем доступ, по умолчанию текущий
 */    
-public function __invoke()
+public function __invoke($controller=null,$action=null)
 {
     $matches = $this->getController()->getEvent()->getRouteMatch();
-    $this->setController($matches->getParam('controller', null));
-    $this->setAction($matches->getParam('action', null));
+    if (empty($controller)){
+        $this->setController($matches->getParam('controller', null));
+    } else {
+        $this->setController($controller);
+    }
+    if (empty($action)){
+        $this->setAction($matches->getParam('action', null));
+    } else {
+        $this->setAction($action);
+    }
     return $this;
 }
 
 
 /*
 * повторяет одноименный метод сервиса
+* $permission - строка запроса доступа - символ x r w d
+* $controller - полное имя контроллера к которому проверяем доступ, по умолчанию текущий
+* $action - имя метода контроллера к которому проверяем доступ, по умолчанию текущий
 */
-public function isAllowed($action = null)
+public function isAllowed($permission,$controller=null,$action=null)
 {
-    if (!isset($this->config[$this->controller][$this->action])){
+    if (empty($controller)){
+        $controller=$this->controller;
+    } 
+    if (empty($action)){
+        $action=$this->action;
+    } 
+    /*если нет в конфиге параметров доступа, тогда доступ запрещен*/
+    if (!isset($this->config[$controller][$action])){
         return false;
     }
     /*получить из конфига доступ к методу данного контроллера*/
-    $p=$this->config[$this->controller][$this->action];
-    return $this->AclService->isAllowed($action, $p);
+    return $this->AclService->isAllowed($permission, $this->config[$controller][$action]);
 }
 
 /*
@@ -95,6 +114,7 @@ public function getAction()
 
 /*
 *получить сам сервис ACL
+* этот сервис имеет более широкие возможности
 */
 public function GetAclService()
 {
