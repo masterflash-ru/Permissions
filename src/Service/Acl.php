@@ -8,10 +8,10 @@
 
 namespace Mf\Permissions\Service;
 
-use Zend\Permissions\Acl\AclInterface;
+
 use Exception;
 
-class Acl implements AclInterface
+class Acl
 {
 
     protected $UserService;           /*экземпляр сервиса UserService*/
@@ -25,19 +25,23 @@ class Acl implements AclInterface
     protected $GroupId;
     protected $GuestUser;
     protected $GuestGroup;
+    protected $config;
 
 public function __construct($config,$UserService) 
 {
 
     $this->UserService=$UserService;
+    
     if (!empty($config["root_owner"]) && is_array($config["root_owner"]) && count($config["root_owner"])==3){
         self::$root_owner=$config["root_owner"];
     } else {
         self::$root_owner=[1,1,0444];
     }
+    unset( $config["root_owner"]);
+    $this->config=$config;
     /*гостевые записи*/
-    $this->GuestUser=$config["guest"][0];
-    $this->GuestGroup=$config["guest"][1];
+    $this->GuestUser=2;
+    $this->GuestGroup=2;
 }
 
     
@@ -48,7 +52,29 @@ public function hasResource($resource)
 {
     return true;
 }
-    
+
+/*
+* $action - строка запроса доступа - символ x r w d
+* $resource - ресурс доступа, например, для контроллера: ["имя_контроллера","имя_метода"] - по сути это путь
+*  для простого объекта может быть просто строка
+*/
+public function isAllowed($action = null,$resource=null)
+{
+    if (is_array($resource)){
+        $i=0;
+        foreach ($resource as $item){
+            if (empty($i)){
+                $permission=$this->config[$item];
+                $i++;
+            } else {
+                $permission=$permission[$item];
+            }
+        }
+    } else{
+        $permission=$this->config[$resource];
+    }
+    return $this->_isAllowed($action, $permission);
+}
     
     
 /* метод проверяет разрешено то или иное действие (true или false), передается варианты действий, аналогичных в UNIX, это r, w, x, d
@@ -62,7 +88,7 @@ public function hasResource($resource)
 ВНИМАНИЕ! если никакой юзер не авторизован, и вызывается этот метод для проверки доступа, подразумевается, что защел гость и все проверяется с 
 гостевой записью, см. конфиг, эти записи есть в базе
 */    
-public function isAllowed($action = null, $permission = null, $parent_permission = null)
+protected function _isAllowed($action = null, $permission = null, $parent_permission = null)
 {
     if (empty($parent_permission)) {
         $parent_permission=self::$root_owner;

@@ -19,20 +19,17 @@ class Acl extends AbstractPlugin
     protected $AclService;
     
     /**
-    * конфиг, только секция $config["permission"]["access_list"]
+    * конфиг, только секция $config["permission"]
     */
     protected $config;
     
-    /*полное имя класса контроллера*/
-    protected $controller;
+    /*объект доступк к которому проверяем*/
+    protected $resource;
     
-    /*имя метода контроллера*/
-    protected $action;
     
-public function __construct($AclService,$config) 
+public function __construct($AclService) 
 {
     $this->AclService = $AclService;
-    $this->config=$config;
 }
 
 /*
@@ -40,19 +37,9 @@ public function __construct($AclService,$config)
 * $controller - полное имя контроллера к которому проверяем доступ, по умолчанию текущий
 * $action - имя метода контроллера к которому проверяем доступ, по умолчанию текущий
 */    
-public function __invoke($controller=null,$action=null)
+public function __invoke($resource=null)
 {
-    $matches = $this->getController()->getEvent()->getRouteMatch();
-    if (empty($controller)){
-        $this->setController($matches->getParam('controller', null));
-    } else {
-        $this->setController($controller);
-    }
-    if (empty($action)){
-        $this->setAction($matches->getParam('action', null));
-    } else {
-        $this->setAction($action);
-    }
+    $this->resource=$resource;
     return $this;
 }
 
@@ -60,56 +47,36 @@ public function __invoke($controller=null,$action=null)
 /*
 * повторяет одноименный метод сервиса
 * $permission - строка запроса доступа - символ x r w d
-* $controller - полное имя контроллера к которому проверяем доступ, по умолчанию текущий
-* $action - имя метода контроллера к которому проверяем доступ, по умолчанию текущий
+* $resource - ресурс доступа, например, для контроллера: ["имя_контроллера","имя_метода"] - по сути это путь
+*  для простого объекта может быть просто строка
+
 */
-public function isAllowed($permission,$controller=null,$action=null)
+public function isAllowed($permission,$resource=null)
 {
-    if (empty($controller)){
-        $controller=$this->controller;
-    } 
-    if (empty($action)){
-        $action=$this->action;
-    } 
-    /*если нет в конфиге параметров доступа, тогда доступ запрещен*/
-    if (!isset($this->config[$controller][$action])){
-        return false;
+    if (empty($resource)){
+        $resource=$this->resource;
     }
-    /*получить из конфига доступ к методу данного контроллера*/
-    return $this->AclService->isAllowed($permission, $this->config[$controller][$action]);
+    return $this->AclService->isAllowed($permission, $resource);
 }
 
 /*
 *установить имя контроллера
 */
-public function setController($controller)
+public function setResource($resource)
 {
-    $this->controller=$controller;
+    $this->resource=$resource;
 }
 
 /*
-*установить имя метода контроллера
-*/
-public function setAction($action)
-{
-    $this->action=$action;
-}
 
 /*
 *получить имя контроллера
 */
-public function getController()
+public function getResource()
 {
-    return $this->controller;
+    return $this->resource;
 }
 
-/*
-*получить имя метода контроллера
-*/
-public function getAction()
-{
-    return $this->action;
-}
 
 
 /*
