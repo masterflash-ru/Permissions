@@ -25,20 +25,16 @@ class Acl
     protected $GroupId;
     protected $GuestUser;
     protected $GuestGroup;
+    protected $connection;
     protected $config;
 
-public function __construct($config,$UserService) 
+public function __construct($connection,$UserService,$config) 
 {
 
     $this->UserService=$UserService;
-    
-    if (!empty($config["root_owner"]) && is_array($config["root_owner"]) && count($config["root_owner"])==3){
-        self::$root_owner=$config["root_owner"];
-    } else {
-        self::$root_owner=[1,1,0444];
-    }
-    unset( $config["root_owner"]);
     $this->config=$config;
+    
+    $this->connection=$connection;
     /*гостевые записи*/
     $this->GuestUser=2;
     $this->GuestGroup=2;

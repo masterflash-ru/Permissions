@@ -14,11 +14,9 @@ class AclFactory
      */
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {        
-        $config=$container->get('config');
-        if (!isset($config["permission"])){
-            $config["permission"]=[];
-        }
+        $connection=$container->get('DefaultSystemDb');
         $user=$container->get(User::class);
-        return new $requestedName($config["permission"],$user);
+        $config=$container->get('config');
+        return new $requestedName($connection,$user,$config);
     }
 }
