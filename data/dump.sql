@@ -24,15 +24,12 @@ DROP TABLE IF EXISTS `permissions`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `permissions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `subid` int(11) DEFAULT NULL,
-  `level` int(11) DEFAULT NULL,
   `name` char(127) DEFAULT NULL COMMENT 'просто описание',
   `object` char(127) DEFAULT NULL COMMENT 'строка объекта',
   `mode` int(11) DEFAULT NULL COMMENT 'код доступа как в unix',
   `owner_user` int(11) DEFAULT NULL COMMENT 'ID владельца-юзера',
   `owner_group` int(11) DEFAULT NULL COMMENT 'ID владельца-группы',
-  PRIMARY KEY (`id`),
-  KEY `subid` (`subid`,`level`)
+  PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='список объектов доступа дерево';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
