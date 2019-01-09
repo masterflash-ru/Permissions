@@ -18,11 +18,6 @@ class Acl extends AbstractPlugin
     */
     protected $AclService;
     
-    /**
-    * конфиг, только секция $config["permission"]
-    */
-    protected $config;
-    
     /*объект доступк к которому проверяем*/
     protected $resource;
     

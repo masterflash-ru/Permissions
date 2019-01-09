@@ -16,6 +16,8 @@ class Acl
 
     protected $UserService;           /*экземпляр сервиса UserService*/
     protected static $root_owner;    /*доступы которые дает главный владелец (root) по умолчанию*/
+    protected static $guest_owner;    /*доступы которые дает гость по умолчанию*/
+    protected static $permissions=[]; /*массив доступов, считанных из базы*/
     protected static $actions=[
                     "r"=>[256,32,4],
                     "w"=>[128,16,2],
@@ -23,21 +25,40 @@ class Acl
                 ];
     protected $UserId;
     protected $GroupId;
-    protected $GuestUser;
-    protected $GuestGroup;
     protected $connection;
     protected $config;
+    protected $cache;
 
-public function __construct($connection,$UserService,$config) 
+public function __construct($connection,$UserService,$cache,$config) 
 {
 
     $this->UserService=$UserService;
     $this->config=$config;
+    $this->cache=$cache;
     
     $this->connection=$connection;
-    /*гостевые записи*/
-    $this->GuestUser=2;
-    $this->GuestGroup=2;
+    
+    /*читаем доступы из таблицы и сохраним в кеш*/
+    $key="permissions";
+    //пытаемся считать из кеша
+    $result = false;
+    static::$permissions= $this->cache->getItem($key, $result);
+    if (!$result){
+        $rs=$connection->Execute("select object,mode,owner_user,owner_group from permissions");
+        while(!$rs->EOF){
+            static::$permissions[$rs->Fields->Item["object"]->Value]=[
+                $rs->Fields->Item["owner_user"]->Value,
+                $rs->Fields->Item["owner_group"]->Value,
+                $rs->Fields->Item["mode"]->Value,
+                ];
+            $rs->MoveNext();
+        }
+        //сохраним в кеш
+        $this->cache->setItem($key, static::$permissions);
+    }
+    
+    static::$root_owner=$config["permission"]["root_owner"];
+    static::$guest_owner=$config["permission"]["guest_owner"];
 }
 
     
@@ -51,25 +72,18 @@ public function hasResource($resource)
 
 /*
 * $action - строка запроса доступа - символ x r w d
-* $resource - ресурс доступа, например, для контроллера: ["имя_контроллера","имя_метода"] - по сути это путь
+* $resource - ресурс доступа, строка, например, Application\Controller\IndexController/index - по сути это путь
+* .          допускается массив элементов
 *  для простого объекта может быть просто строка
 */
 public function isAllowed($action = null,$resource=null)
 {
     if (is_array($resource)){
-        $i=0;
-        foreach ($resource as $item){
-            if (empty($i)){
-                $permission=$this->config[$item];
-                $i++;
-            } else {
-                $permission=$permission[$item];
-            }
-        }
-    } else{
-        $permission=$this->config[$resource];
+        $resource=implode("/",$resource);
     }
-    return $this->_isAllowed($action, $permission);
+    $p=$this->searchResource($resource);
+    if (count($p)!=2){return false;}
+    return $this->_isAllowed($action, $p[0],$p[1]);
 }
     
     
@@ -102,10 +116,10 @@ protected function _isAllowed($action = null, $permission = null, $parent_permis
     *с конфигом пакета
     */
     if (empty($user)){
-        $user=$this->GuestUser;
+        $user=static::$guest_owner[0];
     }
     if (empty($group)){
-        $group=[$this->GuestGroup];
+        $group=[static::$guest_owner[1]];
     }
     
 
@@ -161,7 +175,46 @@ protected function _isAllowed($action = null, $permission = null, $parent_permis
     return false;
 }
 
-    
+/**
+* поиск объекта в таблице
+* resource - строка имени ресурса, 
+* возвращает массив из 2-х элементов:[массив_доступов_объекта,массив_доступов_родителя]
+* если родитель не найден, тогда родителем считается root
+*/
+protected function searchResource(string $resource)
+{
+    $r=array_filter(static::$permissions,function($k) use ($resource) {
+        /*прямое совпадение*/
+        if ($k===$resource){return true;}
+        /*возможный родитель*/
+        if ($k=== preg_replace("/\/[a-z0-9]*$/ui","",$resource) ){return true;};
+        return false;
+    },ARRAY_FILTER_USE_KEY);
+        
+    /*порядок:
+    * [искомый объект,родительский]
+    */
+    uksort($r,"strcmp");
+    $r=array_reverse($r);
+    /*если в массиве одно значение, то это может быть родительский объект, проверим
+    * случай, если это так, если не совпадает имя, тогда удалим его, т.к. искомый объект не найден
+    */
+    if (count($r)==1 && key($r)!=$resource){
+        unset($r[key($r)]);
+    }
+    /*меняем ключи на числовые*/
+    $rez=[];
+    foreach ($r as $v){
+        $rez[]=$v;
+    }
+    if (count($rez)==1){
+        $rez[]=static::$root_owner;
+    }
+
+    return $rez;
+}
+
+
 /**
 * внутренняя, возвращает ID авторизованного юзера
 * и сохраняет в этом объекте

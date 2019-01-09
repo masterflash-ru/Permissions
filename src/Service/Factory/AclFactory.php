@@ -17,6 +17,7 @@ class AclFactory
         $connection=$container->get('DefaultSystemDb');
         $user=$container->get(User::class);
         $config=$container->get('config');
-        return new $requestedName($connection,$user,$config);
+        $cache = $container->get('DefaultSystemCache');
+        return new $requestedName($connection,$user,$cache,$config);
     }
 }
