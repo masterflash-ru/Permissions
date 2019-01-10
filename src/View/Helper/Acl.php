@@ -15,57 +15,61 @@ class Acl extends AbstractHelper
     */
     protected $AclService;
     
-    /**
-    * конфиг, только секция $config["permission"]["access_list"]
-    */
-    protected $config;
-    
-    /*полное имя класса помощника*/
-    protected $view_helper;
+    /*объект доступк к которому проверяем*/
+    protected $resource;
     
     
-public function __construct($AclService,$config) 
+public function __construct($AclService) 
 {
     $this->AclService = $AclService;
-    $this->config=$config;
 }
 
 /*
 *возвращает сам этот объект
+* $controller - полное имя объекта к которому проверяем доступ, по умолчанию текущий
+* $action - имя метода контроллера к которому проверяем доступ, по умолчанию текущий
 */    
-public function __invoke($view_helper=null)
+public function __invoke($resource=null)
 {
-    $this->setViewHelperName($view_helper);
+    $this->resource=$resource;
     return $this;
 }
+
+
 /*
 * повторяет одноименный метод сервиса
+* $permission - строка запроса доступа - символ x r w d
+* $resource - ресурс доступа, например, для объектов можно: ["объекта","имя_метода"] - по сути это путь
+*  для простого объекта может быть просто строка
 */
-public function isAllowed($action = null,$view_helper=null)
+public function isAllowed($permission,$resource=null)
 {
-    $this->setViewHelperName($view_helper);
-    if (!isset($this->config[$this->view_helper])){
-        return false;
+    if (empty($resource)){
+        $resource=$this->resource;
     }
-    /*получить из конфига доступ к методу данного контроллера*/
-    $p=$this->config[$this->view_helper];
-    return $this->AclService->isAllowed($action, $p);
+    return $this->AclService->isAllowed($permission, $resource);
 }
 
-    
-public function setViewHelperName($view_helper)
+/*
+*установить имя контроллера
+*/
+public function setResource($resource)
 {
-    if (!is_null($view_helper)){
-        if (is_object($view_helper)){
-            $view_helper=get_class($view_helper);
-        }
-        $this->view_helper=$view_helper;
-    } else {
-        throw new Exception ("Не указан экземпляр ");
-    }
-
+    $this->resource=$resource;
 }
-    
+
+/*
+
+/*
+*получить имя контроллера
+*/
+public function getResource()
+{
+    return $this->resource;
+}
+
+
+
 /*
 *получить сам сервис ACL
 * этот сервис имеет более широкие возможности

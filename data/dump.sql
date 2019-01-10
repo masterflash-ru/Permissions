@@ -30,7 +30,7 @@ CREATE TABLE `permissions` (
   `owner_user` int(11) DEFAULT NULL COMMENT 'ID владельца-юзера',
   `owner_group` int(11) DEFAULT NULL COMMENT 'ID владельца-группы',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='список объектов доступа дерево';
+) ENGINE=MyISAM AUTO_INCREMENT=101 DEFAULT CHARSET=utf8 COMMENT='список объектов доступа';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 
