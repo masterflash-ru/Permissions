@@ -56,7 +56,10 @@ public function __construct($connection,$UserService,$cache,$config)
         //сохраним в кеш
         $this->cache->setItem($key, static::$permissions);
     }
-    
+    /*на всякий случай, если таблица пустая, сделать пустой массив*/
+    if (!is_array(static::$permissions)){
+        static::$permissions=[];
+    }
     static::$root_owner=$config["permission"]["root_owner"];
     static::$guest_owner=$config["permission"]["guest_owner"];
 }
