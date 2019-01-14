@@ -7,7 +7,8 @@ API сервиса контроля доступа
 
 Вызов | описание
 ------|--------------
-isAllowed($action,$resource):bollean | Возвращает разрешение на доступ true|false к объекту $resource (строка), запрос доступа в $action - символ r,w,x,d 
+isAllowed($action,$resource):bollean | Возвращает разрешение на доступ true|false к статичному объекту $resource (строка), запрос доступа в $action - символ r,w,x,d 
+checkAcl($action = null, $permission = null, $parent_permission = null):boolean | Ручная проверка доступа, учитывается родительский доступ,$permission и $parent_permission - массив[юзер,группа,код_доступа]
  
 Помощник Mf\Permissions\View\Helper\Acl
 
