@@ -86,7 +86,7 @@ public function isAllowed($action = null,$resource=null)
     }
     $p=$this->searchResource($resource);
     if (count($p)!=2){return false;}
-    return $this->_isAllowed($action, $p[0],$p[1]);
+    return $this->checkAcl($action, $p[0],$p[1]);
 }
     
     
@@ -101,7 +101,7 @@ public function isAllowed($action = null,$resource=null)
 ВНИМАНИЕ! если никакой юзер не авторизован, и вызывается этот метод для проверки доступа, подразумевается, что защел гость и все проверяется с 
 гостевой записью, см. конфиг, эти записи есть в базе
 */    
-protected function _isAllowed($action = null, $permission = null, $parent_permission = null)
+public function checkAcl($action = null, $permission = null, $parent_permission = null)
 {
     if (empty($parent_permission)) {
         $parent_permission=self::$root_owner;
@@ -128,25 +128,22 @@ protected function _isAllowed($action = null, $permission = null, $parent_permis
 
     /*если юзера нет, или он не связан с группой - это ошибка скорей всего, поэтому доступ закрыт*/
     if (empty($user) || empty($group)) {return false;}
-    
+
     /*для root и группы Администраторов всегда все разрешено*/
-    if ($user==1 || in_array((int)$parent_permission[1], $group)){
+    if ($user==1 /*|| in_array((int)$parent_permission[1], $group)*/){
         return true;
     }
-    
+   
     switch ($action){
         case "r":
         case "w":
         case "x":{
             /*смотрим разрешение для владельца*/
-            if ($user==(int)$parent_permission[0]){
-                if (self::$actions[$action][0] & $permission[2]) {return true;}
-            }
+            if ($user==(int)$permission[0] && self::$actions[$action][0] & $permission[2]){return true;}
 
             /*смотрим для группы*/
-            if (in_array((int)$parent_permission[1], $group)){
-                if (self::$actions[$action][1] & $permission[2]) {return true;}
-            }
+            if (in_array((int)$permission[1], $group) && self::$actions[$action][1] & $permission[2]){return true;}
+            
             /*юзер не принадлежит ни к кому, смотрим разрешения "для всех"*/
             if (self::$actions[$action][2] & $permission[2]) {return true;}
 
