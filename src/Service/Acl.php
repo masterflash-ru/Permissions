@@ -37,7 +37,7 @@ public function __construct($connection,$UserService,$cache,$config)
     $this->cache=$cache;
     
     $this->connection=$connection;
-    
+
     /*читаем доступы из таблицы и сохраним в кеш*/
     $key="permissions";
     //пытаемся считать из кеша
