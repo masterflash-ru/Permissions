@@ -47,5 +47,9 @@ return [
         ],
     ],
 
+    /*описатели интерфейсов*/
+    "interface"=>[
+        "permissions"=>__DIR__."/admin.permissions.php",
+    ]
 
 ];
