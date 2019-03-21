@@ -75,8 +75,8 @@ return [
                     "searchOptions"=>NavGridHelper::searchOptions(),
                 ],
                 "colModel" => [
-                    ColModelHelper::text("name",["label"=>"Имя объекта","width"=>400]),
-                    ColModelHelper::text("object",["label"=>"Объект","width"=>400]),
+                    ColModelHelper::text("name",["label"=>"Имя объекта","width"=>400,"editoptions" => ["size"=>60 ]]),
+                    ColModelHelper::text("object",["label"=>"Объект","width"=>400,"editoptions" => ["size"=>60 ]]),
                     ColModelHelper::permissions("mode",["label"=>"Доступ","width"=>400]),
                     ColModelHelper::cellActions(),
                 ],
