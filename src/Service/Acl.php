@@ -74,7 +74,12 @@ public function hasResource($resource)
 }
 
 /*
-* $action - строка запроса доступа - символ x r w d
+* $action - строка запроса доступа - символы:
+* x - исполнение,
+* r - чтение,
+* w - запись,
+* d - удаление
+* p - изменение прав доступа (может только root или владелец ресурса)
 * $resource - ресурс доступа, строка, например, Application\Controller\IndexController/index - по сути это путь
 * .          допускается массив элементов
 *  для простого объекта может быть просто строка
@@ -83,11 +88,17 @@ public function isAllowed($action = null,$resource=null)
 {
     //для root доступ всегда разрешен
     if ($this->getUserId()==1){return true;}
+    
     if (is_array($resource)){
         $resource=implode("/",$resource);
     }
     $p=$this->searchResource($resource);
     if (count($p)!=2){return false;}
+    
+    if ($action=="p"){//проверка возможности смены доступа (владелец и root)
+        return ($this->getUserId()==$p[0][0]);
+    }
+
     return $this->checkAcl($action, $p[0],$p[1]);
 }
     
