@@ -81,6 +81,8 @@ public function hasResource($resource)
 */
 public function isAllowed($action = null,$resource=null)
 {
+    //для root доступ всегда разрешен
+    if ($this->getUserId()==1){return true;}
     if (is_array($resource)){
         $resource=implode("/",$resource);
     }
