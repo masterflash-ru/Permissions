@@ -50,6 +50,7 @@ return [
     /*описатели интерфейсов*/
     "interface"=>[
         "permissions"=>__DIR__."/admin.permissions.php",
+        "permissions_item"=>__DIR__."/admin.permissions.item.php",
     ]
 
 ];

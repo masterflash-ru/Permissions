@@ -1,5 +1,5 @@
 <?php
-namespace Admin;
+namespace Mf\Permissions;
 
 use Admin\Service\JqGrid\ColModelHelper;
 use Admin\Service\JqGrid\NavGridHelper;
