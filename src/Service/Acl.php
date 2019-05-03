@@ -46,13 +46,23 @@ public function __construct($connection,$UserService,$cache,$config)
     if (!$result){
         $rs=$connection->Execute("select object,mode,owner_user,owner_group from permissions");
         while(!$rs->EOF){
-            static::$permissions[$rs->Fields->Item["object"]->Value]=[
+            $permissions[$rs->Fields->Item["object"]->Value]=[
                 $rs->Fields->Item["owner_user"]->Value,
                 $rs->Fields->Item["owner_group"]->Value,
                 $rs->Fields->Item["mode"]->Value,
                 ];
             $rs->MoveNext();
         }
+        /*заменим метасимолы подмены*/
+        foreach ($permissions as $k=>$v){
+            if (false!==strpos($k,"*")){
+                $k=preg_quote($k);
+                $k_new=str_replace("\*",'[a-zA-Z0-9_]+',$k) ;
+                unset($permissions[$k]);
+                $permissions[$k_new]=$v;
+            }
+        }
+        static::$permissions=$permissions;
         //сохраним в кеш
         $this->cache->setItem($key, static::$permissions);
     }
@@ -61,7 +71,7 @@ public function __construct($connection,$UserService,$cache,$config)
         static::$permissions=[];
     }
     static::$root_owner=$config["permission"]["root_owner"];
-    static::$guest_owner=$config["permission"]["guest_owner"];
+    static::$guest_owner=$config["permission"]["guest_owner"];//
 }
 
     
@@ -81,6 +91,7 @@ public function hasResource($resource)
 * d - удаление
 * p - изменение прав доступа (может только root или владелец ресурса)
 * $resource - ресурс доступа, строка, например, Application\Controller\IndexController/index - по сути это путь
+*  или Application\Controller\IndexController::index
 * .          допускается массив элементов
 *  для простого объекта может быть просто строка
 */
@@ -190,31 +201,38 @@ public function checkAcl($action = null, $permission = null, $parent_permission 
 
 /**
 * поиск объекта в таблице
-* resource - строка имени ресурса, 
+* resource - строка имени ресурса, представляет собой:
+* Namespace\Object/function или  Namespace\Object::function
+* если все методы/функции имеют один доступ, то можно использовать Namespace\Object/* или  Namespace\Object::*
 * возвращает массив из 2-х элементов:[массив_доступов_объекта,массив_доступов_родителя]
 * если родитель не найден, тогда родителем считается root
 */
 protected function searchResource(string $resource)
 {
+    $resource=str_replace("::","\\",$resource);
     $r=array_filter(static::$permissions,function($k) use ($resource) {
         /*прямое совпадение*/
         if ($k===$resource){return true;}
-        /*возможный родитель*/
-        if ($k=== preg_replace("/\/[a-z0-9]*$/ui","",$resource) ){return true;};
+        /*возможный родитель   пока не реализовано*/
+        if ($k=== preg_replace("/\/[a-z0-9]*$/ui","",$resource) ){return true;}
+        /*метасимволы, если есть, обрабатываем как регулярные выражения*/
+        if (false!==strpos($k,"[")){
+            return (boolean)preg_match("#{$k}#ui",$resource);
+        }
         return false;
     },ARRAY_FILTER_USE_KEY);
         
-    /*порядок:
+    /*порядок (доступов):
     * [искомый объект,родительский]
     */
     uksort($r,"strcmp");
     $r=array_reverse($r);
     /*если в массиве одно значение, то это может быть родительский объект, проверим
     * случай, если это так, если не совпадает имя, тогда удалим его, т.к. искомый объект не найден
-    */
+    * ПОКА НЕ РАБОТАЕТ
     if (count($r)==1 && key($r)!=$resource){
         unset($r[key($r)]);
-    }
+    }*/
     /*меняем ключи на числовые*/
     $rez=[];
     foreach ($r as $v){
