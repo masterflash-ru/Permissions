@@ -35,6 +35,11 @@ return [
                 ],
             ],
             "add"=>[
+                "cache" =>[
+                    "tags"=>["permissions"],
+                    "keys"=>["permissions"],
+                ],
+
                 "db"=>[ 
                     "sql"=>"select * from permissions",
                     "PrimaryKey"=>"id",

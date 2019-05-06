@@ -221,7 +221,7 @@ protected function searchResource(string $resource)
         }
         return false;
     },ARRAY_FILTER_USE_KEY);
-        
+
     /*порядок (доступов):
     * [искомый объект,родительский]
     */
