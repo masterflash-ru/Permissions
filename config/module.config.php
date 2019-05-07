@@ -26,6 +26,9 @@ return [
         /*корневой владелец и доступ по умолчанию*/
         "root_owner" =>[1,1,0744],
         "guest_owner" =>[2,2,0666],
+        "objects" =>[
+            "interface/permissions" => [1,1,0740],
+        ],
     ],
     /*помощник в контроллеры для проверки доступа и для работы с авторизованным юзером*/
     'controller_plugins' => [
@@ -50,7 +53,7 @@ return [
     /*описатели интерфейсов*/
     "interface"=>[
         "permissions"=>__DIR__."/admin.permissions.php",
-        "permissions_item"=>__DIR__."/admin.permissions.item.php",
+        //"permissions_item"=>__DIR__."/admin.permissions.item.php",
     ]
 
 ];

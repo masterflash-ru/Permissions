@@ -18,6 +18,6 @@ class AclFactory
         $user=$container->get(User::class);
         $config=$container->get('config');
         $cache = $container->get('DefaultSystemCache');
-        return new $requestedName($connection,$user,$cache,$config);
+        return new $requestedName($connection,$user,$cache,$config["permission"]);
     }
 }

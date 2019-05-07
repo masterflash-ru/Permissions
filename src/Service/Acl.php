@@ -10,6 +10,7 @@ namespace Mf\Permissions\Service;
 
 
 use Exception;
+use Zend\Stdlib\ArrayUtils;
 
 class Acl
 {
@@ -26,25 +27,25 @@ class Acl
     protected $UserId;
     protected $GroupId;
     protected $connection;
-    protected $config;
+    //protected $config;
     protected $cache;
 
 public function __construct($connection,$UserService,$cache,$config) 
 {
 
     $this->UserService=$UserService;
-    $this->config=$config;
+    //$this->config=$config;
     $this->cache=$cache;
-    
     $this->connection=$connection;
 
     /*читаем доступы из таблицы и сохраним в кеш*/
     $key="permissions";
     //пытаемся считать из кеша
     $result = false;
-    static::$permissions= $this->cache->getItem($key, $result);
+    $permissions= $this->cache->getItem($key, $result);
     if (!$result){
         $rs=$connection->Execute("select object,mode,owner_user,owner_group from permissions");
+        $permissions=[];
         while(!$rs->EOF){
             $permissions[$rs->Fields->Item["object"]->Value]=[
                 $rs->Fields->Item["owner_user"]->Value,
@@ -53,25 +54,23 @@ public function __construct($connection,$UserService,$cache,$config)
                 ];
             $rs->MoveNext();
         }
-        /*заменим метасимолы подмены*/
-        foreach ($permissions as $k=>$v){
-            if (false!==strpos($k,"*")){
-                $k=preg_quote($k);
-                $k_new=str_replace("\*",'[a-zA-Z0-9_]+',$k) ;
-                unset($permissions[$k]);
-                $permissions[$k_new]=$v;
-            }
-        }
-        static::$permissions=$permissions;
         //сохраним в кеш
-        $this->cache->setItem($key, static::$permissions);
+        $this->cache->setItem($key, $permissions);
     }
-    /*на всякий случай, если таблица пустая, сделать пустой массив*/
-    if (!is_array(static::$permissions)){
-        static::$permissions=[];
+    //поверх статичных доступов из конфига наложим то что указано в таблице
+    $permissions=ArrayUtils::merge($config["objects"] ,$permissions);
+    /*заменим метасимолы подмены*/
+    foreach ($permissions as $k=>$v){
+        if (false!==strpos($k,"*")){
+            $k=preg_quote($k);
+            $k_new=str_replace("\*",'[a-zA-Z0-9_]+',$k) ;
+            unset($permissions[$k]);
+            $permissions[$k_new]=$v;
+        }
     }
-    static::$root_owner=$config["permission"]["root_owner"];
-    static::$guest_owner=$config["permission"]["guest_owner"];//
+    static::$permissions=$permissions;
+    static::$root_owner=$config["root_owner"];
+    static::$guest_owner=$config["guest_owner"];//
 }
 
     
@@ -214,7 +213,7 @@ protected function searchResource(string $resource)
         /*прямое совпадение*/
         if ($k===$resource){return true;}
         /*возможный родитель   пока не реализовано*/
-        if ($k=== preg_replace("/\/[a-z0-9]*$/ui","",$resource) ){return true;}
+        if ($k=== preg_replace("/\/[a-z0-9_*]*$/ui","",$resource) ){return true;}
         /*метасимволы, если есть, обрабатываем как регулярные выражения*/
         if (false!==strpos($k,"[")){
             return (boolean)preg_match("#{$k}#ui",$resource);
