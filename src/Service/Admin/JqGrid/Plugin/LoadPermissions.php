@@ -15,7 +15,7 @@ class LoadPermissions extends AbstractPlugin
     }
 
 
- public function read()
+ public function iread()
  {
 
      $rez["rows"]=[];
