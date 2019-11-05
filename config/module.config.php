@@ -23,6 +23,10 @@ return [
     ],
     /*конфиг доступов к разым объектам системы по умолчанию, все пусто*/
     "permission"=>[
+        "config"=>[
+            "database"  =>  "DefaultSystemDb",
+            "cache"     =>  "DefaultSystemCache",
+        ],
         /*корневой владелец и доступ по умолчанию*/
         "root_owner" =>[1,1,0744],
         "guest_owner" =>[2,2,0666],
