@@ -4,42 +4,32 @@ namespace Mf\Permissions;
 
 use Mf\Migrations\AbstractMigration;
 use Mf\Migrations\MigrationInterface;
+use Zend\Db\Sql\Ddl;
 
 class Version20191104160138 extends AbstractMigration implements MigrationInterface
 {
     public static $description = "Create table for permissions";
 
-    public function up($schema)
+    public function up($schema, $adapter)
     {
-        switch ($this->db_type){
-            case "mysql":{
-                $this->addSql("CREATE TABLE `permissions` (
-                  `id` int(11) NOT NULL AUTO_INCREMENT,
-                  `name` char(127) DEFAULT NULL COMMENT 'просто описание',
-                  `object` char(127) DEFAULT NULL COMMENT 'строка объекта',
-                  `mode` int(11) DEFAULT NULL COMMENT 'код доступа как в unix',
-                  `owner_user` int(11) DEFAULT NULL COMMENT 'ID владельца-юзера',
-                  `owner_group` int(11) DEFAULT NULL COMMENT 'ID владельца-группы',
-                  PRIMARY KEY (`id`)
-                ) ENGINE=MyISAM AUTO_INCREMENT=101 DEFAULT CHARSET=utf8 COMMENT='список объектов доступа'");
-                break;
-            }
-            default:{
-                throw new \Exception("the database {$this->db_type} is not supported !");
-            }
-        }
+        $this->mysql_add_create_table=" ENGINE=MyIsam DEFAULT CHARSET=utf8";
+        $table = new Ddl\CreateTable("permissions");
+        $table->addColumn(new Ddl\Column\Integer('id',false,null,["AUTO_INCREMENT"=>true]));
+        $table->addColumn(new Ddl\Column\Char('name', 127,false,"",["COMMENT"=>"Описание объекта"]));
+        $table->addColumn(new Ddl\Column\Char('object',255,false,"",["COMMENT"=>"Объект, его хеш или имя"]));
+        $table->addColumn(new Ddl\Column\Integer('mode',true,0,["COMMENT"=>"код доступа в как в UNIX"]));
+        $table->addColumn(new Ddl\Column\Integer('owner_user',true,0,["COMMENT"=>"ID владельца-юзера"]));
+        $table->addColumn(new Ddl\Column\Integer('owner_group',true,0,["COMMENT"=>"ID владельца-группы"]));
+        
+        $table->addConstraint(
+            new Ddl\Constraint\PrimaryKey(['id'])
+        );
+        $this->addSql($table);
     }
 
-    public function down($schema)
+    public function down($schema, $adapter)
     {
-        switch ($this->db_type){
-            case "mysql":{
-                $this->addSql("DROP TABLE `permissions`");
-                break;
-            }
-            default:{
-                throw new \Exception("the database {$this->db_type} is not supported !");
-            }
-        }
+        $drop = new Ddl\DropTable('permissions');
+        $this->addSql($drop);
     }
 }
