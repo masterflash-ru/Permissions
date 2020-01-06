@@ -7,8 +7,8 @@
 namespace Mf\Permissions\Controller\Plugin;
 
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\FactoryInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
+use Laminas\ServiceManager\FactoryInterface;
+use Laminas\ServiceManager\ServiceLocatorInterface;
 
 use Mf\Permissions\Service\Acl;
 
@@ -26,7 +26,7 @@ class AclFactory implements FactoryInterface
     /**
      * Create and return Acl instance
      *
-     * For use with zend-servicemanager v2; proxies to __invoke().
+     * For use with Laminas-servicemanager v2; proxies to __invoke().
      *
      * @param ServiceLocatorInterface $container
      * @return Acl

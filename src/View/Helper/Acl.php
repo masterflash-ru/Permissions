@@ -5,7 +5,7 @@
 
 namespace Mf\Permissions\View\Helper;
 
-use Zend\View\Helper\AbstractHelper;
+use Laminas\View\Helper\AbstractHelper;
 use Exception;
 
 class Acl extends AbstractHelper 

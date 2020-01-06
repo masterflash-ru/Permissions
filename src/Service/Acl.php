@@ -10,7 +10,7 @@ namespace Mf\Permissions\Service;
 
 
 use Exception;
-use Zend\Stdlib\ArrayUtils;
+use Laminas\Stdlib\ArrayUtils;
 
 class Acl
 {

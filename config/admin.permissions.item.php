@@ -6,7 +6,7 @@
 
 namespace Mf\Permissions;
 
-use Zend\Form\Element;
+use Laminas\Form\Element;
 
 
 return [

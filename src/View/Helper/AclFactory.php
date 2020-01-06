@@ -2,7 +2,7 @@
 namespace Mf\Permissions\View\Helper;
 
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 use Mf\Permissions\Service\Acl;
 
 class AclFactory implements FactoryInterface

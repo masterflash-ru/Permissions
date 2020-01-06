@@ -3,7 +3,7 @@ namespace Mf\Permissions;
 
 use Admin\Service\JqGrid\ColModelHelper;
 use Admin\Service\JqGrid\NavGridHelper;
-use Zend\Json\Expr;
+use Laminas\Json\Expr;
 
 
 
