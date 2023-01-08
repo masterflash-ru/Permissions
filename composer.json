@@ -10,7 +10,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "php": "^7.2",
+        "php": "^7.2 || ^8.0",
         "masterflash-ru/ado": "^2.0",
         "masterflash-ru/users": "*"
     },
